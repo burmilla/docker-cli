@@ -20,6 +20,10 @@ build_docker_image:
 build_docker_image_arm64:
 	docker build -t $(DEV_DOCKER_IMAGE_NAME) -f ./dockerfiles/Dockerfile.dev.arm64 .
 
+.PHONY: build_docker_image_mips64el
+build_docker_image_mips64el:
+	docker build -t $(DEV_DOCKER_IMAGE_NAME) -f ./dockerfiles/Dockerfile.dev.mips64el .
+
 # build docker image having the linting tools (dockerfiles/Dockerfile.lint)
 .PHONY: build_linter_image
 build_linter_image:
@@ -40,7 +44,12 @@ build: binary
 binary_arm64: build_docker_image_arm64
 	docker run --rm $(ENVVARS) $(MOUNTS) $(DEV_DOCKER_IMAGE_NAME) make binary
 
+binary_mips64el: build_docker_image_mips64el
+	docker run --rm $(ENVVARS) $(MOUNTS) $(DEV_DOCKER_IMAGE_NAME) make binary
+
 build_arm64: binary_arm64
+
+build_mips64el: binary_mips64el
 
 # clean build artifacts using a container
 .PHONY: clean
