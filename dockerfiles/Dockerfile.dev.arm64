@@ -1,5 +1,6 @@
 
-FROM    arm64v8/golang:1.8.7-alpine3.6
+FROM    arm64v8/golang:1.19.5-alpine
+ENV     GO111MODULE=off
 
 RUN     apk add -U git gcc make bash coreutils musl-dev
 
