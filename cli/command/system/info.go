@@ -3,14 +3,12 @@ package system
 import (
 	"fmt"
 	"io"
-	"sort"
 	"strings"
 
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/debug"
 	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/pkg/templates"
 	"github.com/docker/go-units"
 	"github.com/spf13/cobra"
@@ -74,77 +72,10 @@ func prettyPrintInfo(dockerCli *command.DockerCli, info types.Info) error {
 		}
 	}
 	fprintfIfNotEmpty(dockerCli.Out(), "Logging Driver: %s\n", info.LoggingDriver)
-	fprintfIfNotEmpty(dockerCli.Out(), "Cgroup Driver: %s\n", info.CgroupDriver)
-
-	fmt.Fprintf(dockerCli.Out(), "Plugins: \n")
-	fmt.Fprintf(dockerCli.Out(), " Volume:")
-	fmt.Fprintf(dockerCli.Out(), " %s", strings.Join(info.Plugins.Volume, " "))
-	fmt.Fprintf(dockerCli.Out(), "\n")
-	fmt.Fprintf(dockerCli.Out(), " Network:")
-	fmt.Fprintf(dockerCli.Out(), " %s", strings.Join(info.Plugins.Network, " "))
-	fmt.Fprintf(dockerCli.Out(), "\n")
-
-	if len(info.Plugins.Authorization) != 0 {
-		fmt.Fprintf(dockerCli.Out(), " Authorization:")
-		fmt.Fprintf(dockerCli.Out(), " %s", strings.Join(info.Plugins.Authorization, " "))
-		fmt.Fprintf(dockerCli.Out(), "\n")
-	}
 
 	fmt.Fprintf(dockerCli.Out(), " Log:")
 	fmt.Fprintf(dockerCli.Out(), " %s", strings.Join(info.Plugins.Log, " "))
 	fmt.Fprintf(dockerCli.Out(), "\n")
-
-	fmt.Fprintf(dockerCli.Out(), "Swarm: %v\n", info.Swarm.LocalNodeState)
-	if info.Swarm.LocalNodeState != swarm.LocalNodeStateInactive && info.Swarm.LocalNodeState != swarm.LocalNodeStateLocked {
-		fmt.Fprintf(dockerCli.Out(), " NodeID: %s\n", info.Swarm.NodeID)
-		if info.Swarm.Error != "" {
-			fmt.Fprintf(dockerCli.Out(), " Error: %v\n", info.Swarm.Error)
-		}
-		fmt.Fprintf(dockerCli.Out(), " Is Manager: %v\n", info.Swarm.ControlAvailable)
-		if info.Swarm.Cluster != nil && info.Swarm.ControlAvailable && info.Swarm.Error == "" && info.Swarm.LocalNodeState != swarm.LocalNodeStateError {
-			fmt.Fprintf(dockerCli.Out(), " ClusterID: %s\n", info.Swarm.Cluster.ID)
-			fmt.Fprintf(dockerCli.Out(), " Managers: %d\n", info.Swarm.Managers)
-			fmt.Fprintf(dockerCli.Out(), " Nodes: %d\n", info.Swarm.Nodes)
-			fmt.Fprintf(dockerCli.Out(), " Orchestration:\n")
-			taskHistoryRetentionLimit := int64(0)
-			if info.Swarm.Cluster.Spec.Orchestration.TaskHistoryRetentionLimit != nil {
-				taskHistoryRetentionLimit = *info.Swarm.Cluster.Spec.Orchestration.TaskHistoryRetentionLimit
-			}
-			fmt.Fprintf(dockerCli.Out(), "  Task History Retention Limit: %d\n", taskHistoryRetentionLimit)
-			fmt.Fprintf(dockerCli.Out(), " Raft:\n")
-			fmt.Fprintf(dockerCli.Out(), "  Snapshot Interval: %d\n", info.Swarm.Cluster.Spec.Raft.SnapshotInterval)
-			if info.Swarm.Cluster.Spec.Raft.KeepOldSnapshots != nil {
-				fmt.Fprintf(dockerCli.Out(), "  Number of Old Snapshots to Retain: %d\n", *info.Swarm.Cluster.Spec.Raft.KeepOldSnapshots)
-			}
-			fmt.Fprintf(dockerCli.Out(), "  Heartbeat Tick: %d\n", info.Swarm.Cluster.Spec.Raft.HeartbeatTick)
-			fmt.Fprintf(dockerCli.Out(), "  Election Tick: %d\n", info.Swarm.Cluster.Spec.Raft.ElectionTick)
-			fmt.Fprintf(dockerCli.Out(), " Dispatcher:\n")
-			fmt.Fprintf(dockerCli.Out(), "  Heartbeat Period: %s\n", units.HumanDuration(info.Swarm.Cluster.Spec.Dispatcher.HeartbeatPeriod))
-			fmt.Fprintf(dockerCli.Out(), " CA Configuration:\n")
-			fmt.Fprintf(dockerCli.Out(), "  Expiry Duration: %s\n", units.HumanDuration(info.Swarm.Cluster.Spec.CAConfig.NodeCertExpiry))
-			fmt.Fprintf(dockerCli.Out(), "  Force Rotate: %d\n", info.Swarm.Cluster.Spec.CAConfig.ForceRotate)
-			fprintfIfNotEmpty(dockerCli.Out(), "  Signing CA Certificate: \n%s\n\n", strings.TrimSpace(info.Swarm.Cluster.Spec.CAConfig.SigningCACert))
-			if len(info.Swarm.Cluster.Spec.CAConfig.ExternalCAs) > 0 {
-				fmt.Fprintf(dockerCli.Out(), "  External CAs:\n")
-				for _, entry := range info.Swarm.Cluster.Spec.CAConfig.ExternalCAs {
-					fmt.Fprintf(dockerCli.Out(), "    %s: %s\n", entry.Protocol, entry.URL)
-				}
-			}
-			fmt.Fprintf(dockerCli.Out(), " Root Rotation In Progress: %v\n", info.Swarm.Cluster.RootRotationInProgress)
-		}
-		fmt.Fprintf(dockerCli.Out(), " Node Address: %s\n", info.Swarm.NodeAddr)
-		managers := []string{}
-		for _, entry := range info.Swarm.RemoteManagers {
-			managers = append(managers, entry.Addr)
-		}
-		if len(managers) > 0 {
-			sort.Strings(managers)
-			fmt.Fprintf(dockerCli.Out(), " Manager Addresses:\n")
-			for _, entry := range managers {
-				fmt.Fprintf(dockerCli.Out(), "  %s\n", entry)
-			}
-		}
-	}
 
 	if len(info.Runtimes) > 0 {
 		fmt.Fprintf(dockerCli.Out(), "Runtimes:")
@@ -281,45 +212,9 @@ func prettyPrintInfo(dockerCli *command.DockerCli, info types.Info) error {
 		}
 	}
 
-	fmt.Fprintf(dockerCli.Out(), "Live Restore Enabled: %v\n\n", info.LiveRestoreEnabled)
-
 	// Only output these warnings if the server does not support these features
 	if info.OSType != "windows" {
 		printStorageDriverWarnings(dockerCli, info)
-
-		if !info.MemoryLimit {
-			fmt.Fprintln(dockerCli.Err(), "WARNING: No memory limit support")
-		}
-		if !info.SwapLimit {
-			fmt.Fprintln(dockerCli.Err(), "WARNING: No swap limit support")
-		}
-		if !info.KernelMemory {
-			fmt.Fprintln(dockerCli.Err(), "WARNING: No kernel memory limit support")
-		}
-		if !info.OomKillDisable {
-			fmt.Fprintln(dockerCli.Err(), "WARNING: No oom kill disable support")
-		}
-		if !info.CPUCfsQuota {
-			fmt.Fprintln(dockerCli.Err(), "WARNING: No cpu cfs quota support")
-		}
-		if !info.CPUCfsPeriod {
-			fmt.Fprintln(dockerCli.Err(), "WARNING: No cpu cfs period support")
-		}
-		if !info.CPUShares {
-			fmt.Fprintln(dockerCli.Err(), "WARNING: No cpu shares support")
-		}
-		if !info.CPUSet {
-			fmt.Fprintln(dockerCli.Err(), "WARNING: No cpuset support")
-		}
-		if !info.IPv4Forwarding {
-			fmt.Fprintln(dockerCli.Err(), "WARNING: IPv4 forwarding is disabled")
-		}
-		if !info.BridgeNfIptables {
-			fmt.Fprintln(dockerCli.Err(), "WARNING: bridge-nf-call-iptables is disabled")
-		}
-		if !info.BridgeNfIP6tables {
-			fmt.Fprintln(dockerCli.Err(), "WARNING: bridge-nf-call-ip6tables is disabled")
-		}
 	}
 
 	return nil
