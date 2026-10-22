@@ -46,7 +46,6 @@ type DockerCli struct {
 	err            io.Writer
 	client         client.APIClient
 	defaultVersion string
-	server         ServerInfo
 }
 
 // DefaultVersion returns api.defaultVersion or DOCKER_API_VERSION if specified.
@@ -93,12 +92,6 @@ func (cli *DockerCli) ConfigFile() *configfile.ConfigFile {
 	return cli.configFile
 }
 
-// ServerInfo returns the server version details for the host this client is
-// connected to
-func (cli *DockerCli) ServerInfo() ServerInfo {
-	return cli.server
-}
-
 // CredentialsStore returns a new credentials store based
 // on the settings provided in the configuration file. Empty string returns
 // the default credential store.
@@ -135,18 +128,10 @@ func (cli *DockerCli) Initialize(opts *cliflags.ClientOptions) error {
 	cli.defaultVersion = cli.client.ClientVersion()
 
 	if ping, err := cli.client.Ping(context.Background()); err == nil {
-		cli.server = ServerInfo{OSType: ping.OSType}
-
 		cli.client.NegotiateAPIVersionPing(ping)
 	}
 
 	return nil
-}
-
-// ServerInfo stores details about the supported features and platform of the
-// server
-type ServerInfo struct {
-	OSType string
 }
 
 // NewDockerCli returns a DockerCli instance with IO output and error streams set by in, out and err.
@@ -198,7 +183,7 @@ func getServerHost(hosts []string) (host string, err error) {
 		return "", errors.New("Please specify only one -H")
 	}
 
-	host, err = dopts.ParseHost(false, host)
+	host, err = dopts.ParseHost(host)
 	return
 }
 

@@ -37,15 +37,6 @@ func SetDir(dir string) {
 	configDir = dir
 }
 
-// NewConfigFile initializes an empty configuration file for the given filename 'fn'
-func NewConfigFile(fn string) *configfile.ConfigFile {
-	return &configfile.ConfigFile{
-		AuthConfigs: make(map[string]types.AuthConfig),
-		HTTPHeaders: make(map[string]string),
-		Filename:    fn,
-	}
-}
-
 // LegacyLoadFromReader is a convenience function that creates a ConfigFile object from
 // a non-nested reader
 func LegacyLoadFromReader(configData io.Reader) (*configfile.ConfigFile, error) {

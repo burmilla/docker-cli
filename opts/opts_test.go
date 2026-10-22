@@ -74,17 +74,13 @@ func TestListOptsWithoutValidator(t *testing.T) {
 	if o.Get("baz") {
 		t.Error("o.Get(\"baz\") == true")
 	}
-	o.Delete("foo")
-	if o.String() != "[bar bar]" {
-		t.Errorf("%s != [bar bar]", o.String())
-	}
 	listOpts := o.GetAll()
-	if len(listOpts) != 2 || listOpts[0] != "bar" || listOpts[1] != "bar" {
-		t.Errorf("Expected [[bar bar]], got [%v]", listOpts)
+	if len(listOpts) != 3 || listOpts[0] != "foo" || listOpts[1] != "bar" || listOpts[2] != "bar" {
+		t.Errorf("Expected [[foo bar bar]], got [%v]", listOpts)
 	}
 	mapListOpts := o.GetMap()
-	if len(mapListOpts) != 1 {
-		t.Errorf("Expected [map[bar:{}]], got [%v]", mapListOpts)
+	if len(mapListOpts) != 2 {
+		t.Errorf("Expected [map[foo:{} bar:{}]], got [%v]", mapListOpts)
 	}
 
 }
@@ -109,10 +105,6 @@ func TestListOptsWithValidator(t *testing.T) {
 	}
 	if o.Get("baz") {
 		t.Error("o.Get(\"baz\") == true")
-	}
-	o.Delete("max-file=2")
-	if o.String() != "" {
-		t.Errorf(`%s != ""`, o.String())
 	}
 }
 

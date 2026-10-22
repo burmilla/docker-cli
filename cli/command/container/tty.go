@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"os"
 	gosignal "os/signal"
-	"runtime"
-	"time"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/docker/cli/cli/command"
@@ -47,29 +45,13 @@ func MonitorTtySize(ctx context.Context, cli command.Cli, id string, isExec bool
 
 	resizeTty()
 
-	if runtime.GOOS == "windows" {
-		go func() {
-			prevH, prevW := cli.Out().GetTtySize()
-			for {
-				time.Sleep(time.Millisecond * 250)
-				h, w := cli.Out().GetTtySize()
-
-				if prevW != w || prevH != h {
-					resizeTty()
-				}
-				prevH = h
-				prevW = w
-			}
-		}()
-	} else {
-		sigchan := make(chan os.Signal, 1)
-		gosignal.Notify(sigchan, signal.SIGWINCH)
-		go func() {
-			for range sigchan {
-				resizeTty()
-			}
-		}()
-	}
+	sigchan := make(chan os.Signal, 1)
+	gosignal.Notify(sigchan, signal.SIGWINCH)
+	go func() {
+		for range sigchan {
+			resizeTty()
+		}
+	}()
 	return nil
 }
 

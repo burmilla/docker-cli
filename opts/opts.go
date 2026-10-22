@@ -57,16 +57,6 @@ func (opts *ListOpts) Set(value string) error {
 	return nil
 }
 
-// Delete removes the specified element from the slice.
-func (opts *ListOpts) Delete(key string) {
-	for i, k := range *opts.values {
-		if k == key {
-			(*opts.values) = append((*opts.values)[:i], (*opts.values)[i+1:]...)
-			return
-		}
-	}
-}
-
 // GetMap returns the content of values in a map in order to avoid
 // duplicates.
 func (opts *ListOpts) GetMap() map[string]struct{} {
@@ -193,9 +183,6 @@ func NewMapOpts(values map[string]string, validator ValidatorFctType) *MapOpts {
 
 // ValidatorFctType defines a validator function that returns a validated string and/or an error.
 type ValidatorFctType func(val string) (string, error)
-
-// ValidatorFctListType defines a validator function that returns a validated list of string and/or an error
-type ValidatorFctListType func(val string) ([]string, error)
 
 // ValidateIPAddress validates an Ip address.
 func ValidateIPAddress(val string) (string, error) {

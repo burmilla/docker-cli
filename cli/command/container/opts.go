@@ -77,7 +77,6 @@ type containerOptions struct {
 	volumeDriver      string
 	stopSignal        string
 	stopTimeout       int
-	isolation         string
 	shmSize           opts.MemBytes
 	noHealthcheck     bool
 	healthCmd         string
@@ -205,7 +204,6 @@ func addFlags(flags *pflag.FlagSet) *containerOptions {
 
 	// Low-level execution (cgroups, namespaces, ...)
 	flags.StringVar(&copts.ipcMode, "ipc", "", "IPC namespace to use")
-	flags.StringVar(&copts.isolation, "isolation", "", "Container isolation technology")
 	flags.StringVar(&copts.pidMode, "pid", "", "PID namespace to use")
 	flags.Var(&copts.shmSize, "shm-size", "Size of /dev/shm")
 	flags.StringVar(&copts.utsMode, "uts", "", "UTS namespace to use")
@@ -495,7 +493,6 @@ func parse(flags *pflag.FlagSet, copts *containerOptions) (*containerConfig, err
 		ReadonlyRootfs: copts.readonlyRootfs,
 		LogConfig:      container.LogConfig{Type: copts.loggingDriver, Config: loggingOpts},
 		VolumeDriver:   copts.volumeDriver,
-		Isolation:      container.Isolation(copts.isolation),
 		ShmSize:        copts.shmSize.Value(),
 		Resources:      resources,
 		Tmpfs:          tmpfs,

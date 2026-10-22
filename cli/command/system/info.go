@@ -124,11 +124,6 @@ func prettyPrintInfo(dockerCli *command.DockerCli, info types.Info) error {
 		}
 	}
 
-	// Isolation only has meaning on a Windows daemon.
-	if info.OSType == "windows" {
-		fmt.Fprintf(dockerCli.Out(), "Default Isolation: %v\n", info.Isolation)
-	}
-
 	fprintfIfNotEmpty(dockerCli.Out(), "Kernel Version: %s\n", info.KernelVersion)
 	fprintfIfNotEmpty(dockerCli.Out(), "Operating System: %s\n", info.OperatingSystem)
 	fprintfIfNotEmpty(dockerCli.Out(), "OSType: %s\n", info.OSType)
@@ -212,10 +207,7 @@ func prettyPrintInfo(dockerCli *command.DockerCli, info types.Info) error {
 		}
 	}
 
-	// Only output these warnings if the server does not support these features
-	if info.OSType != "windows" {
-		printStorageDriverWarnings(dockerCli, info)
-	}
+	printStorageDriverWarnings(dockerCli, info)
 
 	return nil
 }

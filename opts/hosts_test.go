@@ -33,18 +33,16 @@ func TestParseHost(t *testing.T) {
 		"tcp://docker.com:2375":    "tcp://docker.com:2375",
 		"unix://":                  "unix://" + DefaultUnixSocket,
 		"unix://path/to/socket":    "unix://path/to/socket",
-		"npipe://":                 "npipe://" + DefaultNamedPipe,
-		"npipe:////./pipe/foo":     "npipe:////./pipe/foo",
 	}
 
 	for _, value := range invalid {
-		if _, err := ParseHost(false, value); err == nil {
+		if _, err := ParseHost(value); err == nil {
 			t.Errorf("Expected an error for %v, got [nil]", value)
 		}
 	}
 
 	for value, expected := range valid {
-		if actual, err := ParseHost(false, value); err != nil || actual != expected {
+		if actual, err := ParseHost(value); err != nil || actual != expected {
 			t.Errorf("Expected for %v [%v], got [%v, %v]", value, expected, actual, err)
 		}
 	}

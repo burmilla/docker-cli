@@ -25,31 +25,12 @@ Create a new container
 Options:
       --add-host value                Add a custom host-to-IP mapping (host:ip) (default [])
   -a, --attach value                  Attach to STDIN, STDOUT or STDERR (default [])
-      --blkio-weight value            Block IO (relative weight), between 10 and 1000
-      --blkio-weight-device value     Block IO weight (relative device weight) (default [])
       --cap-add value                 Add Linux capabilities (default [])
       --cap-drop value                Drop Linux capabilities (default [])
-      --cgroup-parent string          Optional parent cgroup for the container
       --cidfile string                Write the container ID to the file
-      --cpu-count int                 The number of CPUs available for execution by the container.
                                       Windows daemon only. On Windows Server containers, this is
                                       approximated as a percentage of total CPU usage.
-      --cpu-percent int               CPU percent (Windows only)
-      --cpu-period int                Limit CPU CFS (Completely Fair Scheduler) period
-      --cpu-quota int                 Limit CPU CFS (Completely Fair Scheduler) quota
-  -c, --cpu-shares int                CPU shares (relative weight)
-      --cpus NanoCPUs                 Number of CPUs (default 0.000)
-      --cpu-rt-period int             Limit the CPU real-time period in microseconds
-      --cpu-rt-runtime int            Limit the CPU real-time runtime in microseconds
-      --cpuset-cpus string            CPUs in which to allow execution (0-3, 0,1)
-      --cpuset-mems string            MEMs in which to allow execution (0-3, 0,1)
       --device value                  Add a host device to the container (default [])
-      --device-cgroup-rule value      Add a rule to the cgroup allowed devices list
-      --device-read-bps value         Limit read rate (bytes per second) from a device (default [])
-      --device-read-iops value        Limit read rate (IO per second) from a device (default [])
-      --device-write-bps value        Limit write rate (bytes per second) to a device (default [])
-      --device-write-iops value       Limit write rate (IO per second) to a device (default [])
-      --disable-content-trust         Skip image verification (default true)
       --dns value                     Set custom DNS servers (default [])
       --dns-option value              Set DNS options (default [])
       --dns-search value              Set custom DNS search domains (default [])
@@ -67,13 +48,9 @@ Options:
   -h, --hostname string               Container host name
       --init                          Run an init inside the container that forwards signals and reaps processes
   -i, --interactive                   Keep STDIN open even if not attached
-      --io-maxbandwidth string        Maximum IO bandwidth limit for the system drive (Windows only)
-      --io-maxiops uint               Maximum IOps limit for the system drive (Windows only)
       --ip string                     IPv4 address (e.g., 172.30.100.104)
       --ip6 string                    IPv6 address (e.g., 2001:db8::33)
       --ipc string                    IPC namespace to use
-      --isolation string              Container isolation technology
-      --kernel-memory string          Kernel memory limit
   -l, --label value                   Set meta data on a container (default [])
       --label-file value              Read in a line delimited file of labels (default [])
       --link value                    Add link to another container (default [])
@@ -81,10 +58,6 @@ Options:
       --log-driver string             Logging driver for the container
       --log-opt value                 Log driver options (default [])
       --mac-address string            Container MAC address (e.g., 92:d0:c6:0a:29:33)
-  -m, --memory string                 Memory limit
-      --memory-reservation string     Memory soft limit
-      --memory-swap string            Swap limit equal to memory plus swap: '-1' to enable unlimited swap
-      --memory-swappiness int         Tune container memory swappiness (0 to 100) (default -1)
       --mount value                   Attach a filesytem mount to the container (default [])
       --name string                   Assign a name to the container
       --network-alias value           Add network-scoped alias for the container (default [])
@@ -95,10 +68,8 @@ Options:
                                       'host': use the Docker host network stack
                                       '<network-name>|<network-id>': connect to a user-defined network
       --no-healthcheck                Disable any container-specified HEALTHCHECK
-      --oom-kill-disable              Disable OOM Killer
       --oom-score-adj int             Tune host's OOM preferences (-1000 to 1000)
       --pid string                    PID namespace to use
-      --pids-limit int                Tune container pids limit (set -1 for unlimited), kernel >= 4.3
       --privileged                    Give extended privileges to this container
   -p, --publish value                 Publish a container's port(s) to the host (default [])
   -P, --publish-all                   Publish all exposed ports to random ports
@@ -218,43 +189,3 @@ user cannot pass a size less than the Default BaseFS Size.
 For the `overlay2` storage driver, the size option is only available if the
 backing fs is `xfs` and mounted with the `pquota` mount option.
 Under these conditions, user can pass any size less then the backing fs size.
-
-### Specify isolation technology for container (--isolation)
-
-This option is useful in situations where you are running Docker containers on
-Windows. The `--isolation=<value>` option sets a container's isolation
-technology. On Linux, the only supported is the `default` option which uses
-Linux namespaces. On Microsoft Windows, you can specify these values:
-
-
-| Value     | Description                                                                                                                                                   |
-|-----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `default` | Use the value specified by the Docker daemon's `--exec-opt` . If the `daemon` does not specify an isolation technology, Microsoft Windows uses `process` as its default value if the
-daemon is running on Windows server, or `hyperv` if running on Windows client.  |
-| `process` | Namespace isolation only.                                                                                                                                     |
-| `hyperv`   | Hyper-V hypervisor partition-based isolation.                                                                                                                  |
-
-Specifying the `--isolation` flag without a value is the same as setting `--isolation="default"`.
-
-### Dealing with dynamically created devices (--device-cgroup-rule)
-
-Devices available to a container are assigned at creation time. The
-assigned devices will both be added to the cgroup.allow file and
-created into the container once it is run. This poses a problem when
-a new device needs to be added to running container.
-
-One of the solution is to add a more permissive rule to a container
-allowing it access to a wider range of devices. For example, supposing
-our container needs access to a character device with major `42` and
-any number of minor number (added as new devices appear), the
-following rule would be added:
-
-```
-docker create --device-cgroup-rule='c 42:* rmw' -name my-container my-image
-```
-
-Then, a user could ask `udev` to execute a script that would `docker exec my-container mknod newDevX c 42 <minor>`
-the required device when it is added.
-
-NOTE: initially present devices still need to be explicitely added to
-the create/run command

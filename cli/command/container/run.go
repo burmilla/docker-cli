@@ -6,7 +6,6 @@ import (
 	"net/http/httputil"
 	"os"
 	"regexp"
-	"runtime"
 	"strings"
 	"syscall"
 
@@ -142,13 +141,6 @@ func runContainer(dockerCli *command.DockerCli, opts *runOptions, copts *contain
 	// Disable sigProxy when in TTY mode
 	if config.Tty {
 		opts.sigProxy = false
-	}
-
-	// Telling the Windows daemon the initial size of the tty during start makes
-	// a far better user experience rather than relying on subsequent resizes
-	// to cause things to catch up.
-	if runtime.GOOS == "windows" {
-		hostConfig.ConsoleSize[0], hostConfig.ConsoleSize[1] = dockerCli.Out().GetTtySize()
 	}
 
 	ctx, cancelFun := context.WithCancel(context.Background())

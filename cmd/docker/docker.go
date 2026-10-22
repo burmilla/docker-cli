@@ -191,16 +191,14 @@ func dockerPreRun(opts *cliflags.ClientOptions) {
 
 type versionDetails interface {
 	Client() client.APIClient
-	ServerInfo() command.ServerInfo
 }
 
 func hideUnsupportedFeatures(cmd *cobra.Command, details versionDetails) {
 	clientVersion := details.Client().ClientVersion()
-	osType := details.ServerInfo().OSType
 
 	cmd.Flags().VisitAll(func(f *pflag.Flag) {
 		// hide flags not supported by the server
-		if !isOSTypeSupported(f, osType) || !isVersionSupported(f, clientVersion) {
+		if !isVersionSupported(f, clientVersion) {
 			f.Hidden = true
 		}
 	})
@@ -215,7 +213,6 @@ func hideUnsupportedFeatures(cmd *cobra.Command, details versionDetails) {
 
 func isSupported(cmd *cobra.Command, details versionDetails) error {
 	clientVersion := details.Client().ClientVersion()
-	osType := details.ServerInfo().OSType
 
 	// Check recursively so that, e.g., `docker stack ls` returns the same output as `docker stack`
 	for curr := cmd; curr != nil; curr = curr.Parent() {
@@ -230,10 +227,6 @@ func isSupported(cmd *cobra.Command, details versionDetails) error {
 		if f.Changed {
 			if !isVersionSupported(f, clientVersion) {
 				errs = append(errs, fmt.Sprintf("\"--%s\" requires API version %s, but the Docker daemon API version is %s", f.Name, getFlagAnnotation(f, "version"), clientVersion))
-				return
-			}
-			if !isOSTypeSupported(f, osType) {
-				errs = append(errs, fmt.Sprintf("\"--%s\" requires the Docker daemon to run on %s, but the Docker daemon is running on %s", f.Name, getFlagAnnotation(f, "ostype"), osType))
 			}
 		}
 	})
@@ -254,13 +247,6 @@ func getFlagAnnotation(f *pflag.Flag, annotation string) string {
 func isVersionSupported(f *pflag.Flag, clientVersion string) bool {
 	if v := getFlagAnnotation(f, "version"); v != "" {
 		return versions.GreaterThanOrEqualTo(clientVersion, v)
-	}
-	return true
-}
-
-func isOSTypeSupported(f *pflag.Flag, osType string) bool {
-	if v := getFlagAnnotation(f, "ostype"); v != "" && osType != "" {
-		return osType == v
 	}
 	return true
 }

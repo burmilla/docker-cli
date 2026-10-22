@@ -8,22 +8,21 @@ import (
 	"strings"
 )
 
+// DefaultHTTPHost Default HTTP Host used if only port is provided to -H flag e.g. dockerd -H tcp://:8080
+const DefaultHTTPHost = "localhost"
+
 var (
 	// DefaultHTTPPort Default HTTP Port used if only the protocol is provided to -H flag e.g. dockerd -H tcp://
 	// These are the IANA registered port numbers for use with Docker
 	// see http://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml?search=docker
 	DefaultHTTPPort = 2375 // Default HTTP Port
-	// DefaultTLSHTTPPort Default HTTP Port used when TLS enabled
-	DefaultTLSHTTPPort = 2376 // Default TLS encrypted HTTP Port
 	// DefaultUnixSocket Path for the unix socket.
 	// Docker daemon by default always listens on the default unix socket
 	DefaultUnixSocket = "/var/run/system-docker.sock"
-	// DefaultTCPHost constant defines the default host string used by docker on Windows
+	// DefaultHost constant defines the default host string used by docker
+	DefaultHost = fmt.Sprintf("unix://%s", DefaultUnixSocket)
+	// DefaultTCPHost constant defines the default host string used by docker for tcp sockets
 	DefaultTCPHost = fmt.Sprintf("tcp://%s:%d", DefaultHTTPHost, DefaultHTTPPort)
-	// DefaultTLSHost constant defines the default host string used by docker for TLS sockets
-	DefaultTLSHost = fmt.Sprintf("tcp://%s:%d", DefaultHTTPHost, DefaultTLSHTTPPort)
-	// DefaultNamedPipe defines the default named pipe used by docker on Windows
-	DefaultNamedPipe = `//./pipe/docker_engine`
 )
 
 // ValidateHost validates that the specified string is a valid host and returns it.
@@ -37,19 +36,15 @@ func ValidateHost(val string) (string, error) {
 		}
 	}
 	// Note: unlike most flag validators, we don't return the mutated value here
-	//       we need to know what the user entered later (using ParseHost) to adjust for TLS
+	//       we need to know what the user entered later (using ParseHost)
 	return val, nil
 }
 
 // ParseHost and set defaults for a Daemon host string
-func ParseHost(defaultToTLS bool, val string) (string, error) {
+func ParseHost(val string) (string, error) {
 	host := strings.TrimSpace(val)
 	if host == "" {
-		if defaultToTLS {
-			host = DefaultTLSHost
-		} else {
-			host = DefaultHost
-		}
+		host = DefaultHost
 	} else {
 		var err error
 		host, err = parseDockerDaemonHost(host)
@@ -73,8 +68,6 @@ func parseDockerDaemonHost(addr string) (string, error) {
 		return ParseTCPAddr(addrParts[1], DefaultTCPHost)
 	case "unix":
 		return parseSimpleProtoAddr("unix", addrParts[1], DefaultUnixSocket)
-	case "npipe":
-		return parseSimpleProtoAddr("npipe", addrParts[1], DefaultNamedPipe)
 	case "fd":
 		return addr, nil
 	default:
@@ -83,7 +76,7 @@ func parseDockerDaemonHost(addr string) (string, error) {
 }
 
 // parseSimpleProtoAddr parses and validates that the specified address is a valid
-// socket address for simple protocols like unix and npipe. It returns a formatted
+// socket address for simple protocols like unix. It returns a formatted
 // socket address, either using the address parsed from addr, or the contents of
 // defaultAddr if addr is a blank string.
 func parseSimpleProtoAddr(proto, addr, defaultAddr string) (string, error) {

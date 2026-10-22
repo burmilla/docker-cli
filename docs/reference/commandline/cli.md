@@ -60,10 +60,6 @@ by the `docker` command line:
 * `DOCKER_NOWARN_KERNEL_VERSION` Prevent warnings that your Linux kernel is
   unsuitable for Docker.
 * `DOCKER_RAMDISK` If set this will disable 'pivot_root'.
-* `DOCKER_CONTENT_TRUST` When set Docker uses notary to sign and verify images.
-  Equates to `--disable-content-trust=false` for build, create, pull, push, run.
-* `DOCKER_CONTENT_TRUST_SERVER` The URL of the Notary server to use. This defaults
-  to the same URL as the registry.
 * `DOCKER_HIDE_LEGACY_COMMANDS` When set, Docker hides "legacy" top-level commands (such as `docker rm`, and
   `docker pull`) in `docker help` output, and only `Management commands` per object-type (e.g., `docker container`) are
   printed. This may become the default in a future release, at which point this environment-variable is removed.
@@ -182,15 +178,6 @@ Following is a sample `config.json` file:
   }
 }
 ```
-
-### Notary
-
-If using your own notary server and a self-signed certificate or an internal
-Certificate Authority, you need to place the certificate at
-`tls/<registry_url>/ca.crt` in your docker config directory.
-
-Alternatively you can trust the certificate globally by adding it to your system's
-list of root Certificate Authorities.
 
 ## Examples
 

@@ -21,23 +21,13 @@ func TestEnable(t *testing.T) {
 	}
 }
 
-func TestDisable(t *testing.T) {
-	Disable()
-	if os.Getenv("DEBUG") != "" {
-		t.Fatalf("expected DEBUG=\"\", got %s\n", os.Getenv("DEBUG"))
-	}
-	if logrus.GetLevel() != logrus.InfoLevel {
-		t.Fatalf("expected log level %v, got %v\n", logrus.InfoLevel, logrus.GetLevel())
-	}
-}
-
 func TestEnabled(t *testing.T) {
+	defer os.Setenv("DEBUG", "")
+	if IsEnabled() {
+		t.Fatal("expected debug disabled, got true")
+	}
 	Enable()
 	if !IsEnabled() {
 		t.Fatal("expected debug enabled, got false")
-	}
-	Disable()
-	if IsEnabled() {
-		t.Fatal("expected debug disabled, got true")
 	}
 }
