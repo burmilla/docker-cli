@@ -2,11 +2,12 @@ package image
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/distribution/reference"
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/pkg/jsonmessage"
 	"github.com/docker/docker/registry"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -35,7 +36,6 @@ func NewPullCommand(dockerCli command.Cli) *cobra.Command {
 	flags := cmd.Flags()
 
 	flags.BoolVarP(&opts.all, "all-tags", "a", false, "Download all tagged images in the repository")
-	command.AddTrustVerificationFlags(flags)
 
 	return cmd
 }
@@ -67,19 +67,27 @@ func runPull(dockerCli command.Cli, opts pullOptions) error {
 	authConfig := command.ResolveAuthConfig(ctx, dockerCli, repoInfo.Index)
 	requestPrivilege := command.RegistryAuthenticationPrivilegedFunc(dockerCli, repoInfo.Index, "pull")
 
-	// Check if reference has a digest
-	_, isCanonical := distributionRef.(reference.Canonical)
-	if command.IsTrusted() && !isCanonical {
-		err = trustedPull(ctx, dockerCli, repoInfo, distributionRef, authConfig, requestPrivilege)
-	} else {
-		err = imagePullPrivileged(ctx, dockerCli, authConfig, reference.FamiliarString(distributionRef), requestPrivilege, opts.all)
-	}
+	return imagePullPrivileged(ctx, dockerCli, authConfig, reference.FamiliarString(distributionRef), requestPrivilege, opts.all)
+}
+
+// imagePullPrivileged pulls the image and displays it to the output
+func imagePullPrivileged(ctx context.Context, cli command.Cli, authConfig types.AuthConfig, ref string, requestPrivilege types.RequestPrivilegeFunc, all bool) error {
+
+	encodedAuth, err := command.EncodeAuthToBase64(authConfig)
 	if err != nil {
-		if strings.Contains(err.Error(), "when fetching 'plugin'") {
-			return errors.New(err.Error() + " - Use `docker plugin install`")
-		}
 		return err
 	}
+	options := types.ImagePullOptions{
+		RegistryAuth:  encodedAuth,
+		PrivilegeFunc: requestPrivilege,
+		All:           all,
+	}
 
-	return nil
+	responseBody, err := cli.Client().ImagePull(ctx, ref, options)
+	if err != nil {
+		return err
+	}
+	defer responseBody.Close()
+
+	return jsonmessage.DisplayJSONMessagesToStream(responseBody, cli.Out(), nil)
 }

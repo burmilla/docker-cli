@@ -18,7 +18,6 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/sockets"
 	"github.com/docker/go-connections/tlsconfig"
-	"github.com/docker/notary/passphrase"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"golang.org/x/net/context"
@@ -160,26 +159,6 @@ func (cli *DockerCli) Initialize(opts *cliflags.ClientOptions) error {
 
 	var err error
 	cli.client, err = NewAPIClientFromFlags(opts.Common, cli.configFile)
-	if tlsconfig.IsErrEncryptedKey(err) {
-		var (
-			passwd string
-			giveup bool
-		)
-		passRetriever := passphrase.PromptRetrieverWithInOut(cli.In(), cli.Out(), nil)
-
-		for attempts := 0; tlsconfig.IsErrEncryptedKey(err); attempts++ {
-			// some code and comments borrowed from notary/trustmanager/keystore.go
-			passwd, giveup, err = passRetriever("private", "encrypted TLS private", false, attempts)
-			// Check if the passphrase retriever got an error or if it is telling us to give up
-			if giveup || err != nil {
-				return errors.Wrap(err, "private key is encrypted, but could not get passphrase")
-			}
-
-			opts.Common.TLSOptions.Passphrase = passwd
-			cli.client, err = NewAPIClientFromFlags(opts.Common, cli.configFile)
-		}
-	}
-
 	if err != nil {
 		return err
 	}
@@ -187,15 +166,9 @@ func (cli *DockerCli) Initialize(opts *cliflags.ClientOptions) error {
 	cli.defaultVersion = cli.client.ClientVersion()
 
 	if ping, err := cli.client.Ping(context.Background()); err == nil {
-		cli.server = ServerInfo{
-			HasExperimental: ping.Experimental,
-			OSType:          ping.OSType,
-		}
+		cli.server = ServerInfo{OSType: ping.OSType}
 
 		cli.client.NegotiateAPIVersionPing(ping)
-	} else {
-		// Default to true if we fail to connect to daemon
-		cli.server = ServerInfo{HasExperimental: true}
 	}
 
 	return nil
@@ -204,8 +177,7 @@ func (cli *DockerCli) Initialize(opts *cliflags.ClientOptions) error {
 // ServerInfo stores details about the supported features and platform of the
 // server
 type ServerInfo struct {
-	HasExperimental bool
-	OSType          string
+	OSType string
 }
 
 // NewDockerCli returns a DockerCli instance with IO output and error streams set by in, out and err.

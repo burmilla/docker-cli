@@ -7,7 +7,6 @@ import (
 
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
-	"github.com/docker/cli/cli/command/image"
 	"github.com/docker/distribution/reference"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -51,7 +50,6 @@ func NewCreateCommand(dockerCli command.Cli) *cobra.Command {
 	// with hostname
 	flags.Bool("help", false, "Print usage")
 
-	command.AddTrustVerificationFlags(flags)
 	copts = addFlags(flags)
 	return cmd
 }
@@ -154,7 +152,6 @@ func createContainer(ctx context.Context, dockerCli command.Cli, containerConfig
 
 	var (
 		containerIDFile *cidFile
-		trustedRef      reference.Canonical
 		namedRef        reference.Named
 	)
 
@@ -173,15 +170,6 @@ func createContainer(ctx context.Context, dockerCli command.Cli, containerConfig
 	}
 	if named, ok := ref.(reference.Named); ok {
 		namedRef = reference.TagNameOnly(named)
-
-		if taggedRef, ok := namedRef.(reference.NamedTagged); ok && command.IsTrusted() {
-			var err error
-			trustedRef, err = image.TrustedReference(ctx, dockerCli, taggedRef, nil)
-			if err != nil {
-				return nil, err
-			}
-			config.Image = reference.FamiliarString(trustedRef)
-		}
 	}
 
 	//create the container
@@ -195,11 +183,6 @@ func createContainer(ctx context.Context, dockerCli command.Cli, containerConfig
 			// we don't want to write to stdout anything apart from container.ID
 			if err = pullImage(ctx, dockerCli, config.Image, stderr); err != nil {
 				return nil, err
-			}
-			if taggedRef, ok := namedRef.(reference.NamedTagged); ok && trustedRef != nil {
-				if err := image.TagTrusted(ctx, dockerCli, trustedRef, taggedRef); err != nil {
-					return nil, err
-				}
 			}
 			// Retry
 			var retryErr error
