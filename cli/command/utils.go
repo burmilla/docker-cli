@@ -63,7 +63,7 @@ func PromptForConfirmation(ins io.Reader, outs io.Writer, message string) bool {
 	}
 	message += " [y/N] "
 
-	fmt.Fprintf(outs, message)
+	fmt.Fprint(outs, message)
 
 	// On Windows, force the use of the regular OS stdin stream.
 	if runtime.GOOS == "windows" {
