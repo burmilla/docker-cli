@@ -133,54 +133,6 @@ Docker's client uses this property. If this property is not set, the client
 falls back to the default table format. For a list of supported formatting
 directives, see the [**Formatting** section in the `docker images` documentation](images.md)
 
-The property `pluginsFormat` specifies the default format for `docker plugin ls` output.
-When the `--format` flag is not provided with the `docker plugin ls` command,
-Docker's client uses this property. If this property is not set, the client
-falls back to the default table format. For a list of supported formatting
-directives, see the [**Formatting** section in the `docker plugin ls` documentation](plugin_ls.md)
-
-The property `servicesFormat` specifies the default format for `docker
-service ls` output. When the `--format` flag is not provided with the
-`docker service ls` command, Docker's client uses this property. If this
-property is not set, the client falls back to the default json format. For a
-list of supported formatting directives, see the
-[**Formatting** section in the `docker service ls` documentation](service_ls.md)
-
-The property `serviceInspectFormat` specifies the default format for `docker
-service inspect` output. When the `--format` flag is not provided with the
-`docker service inspect` command, Docker's client uses this property. If this
-property is not set, the client falls back to the default json format. For a
-list of supported formatting directives, see the
-[**Formatting** section in the `docker service inspect` documentation](service_inspect.md)
-
-The property `statsFormat` specifies the default format for `docker
-stats` output. When the `--format` flag is not provided with the
-`docker stats` command, Docker's client uses this property. If this
-property is not set, the client falls back to the default table
-format. For a list of supported formatting directives, see
-[**Formatting** section in the `docker stats` documentation](stats.md)
-
-The property `secretFormat` specifies the default format for `docker
-secret ls` output. When the `--format` flag is not provided with the
-`docker secret ls` command, Docker's client uses this property. If this
-property is not set, the client falls back to the default table
-format. For a list of supported formatting directives, see
-[**Formatting** section in the `docker secret ls` documentation](secret_ls.md)
-
-
-The property `nodesFormat` specifies the default format for `docker node ls` output.
-When the `--format` flag is not provided with the `docker node ls` command,
-Docker's client uses the value of `nodesFormat`. If the value of `nodesFormat` is not set,
-the client uses the default table format. For a list of supported formatting
-directives, see the [**Formatting** section in the `docker node ls` documentation](node_ls.md)
-
-The property `configFormat` specifies the default format for `docker
-config ls` output. When the `--format` flag is not provided with the
-`docker config ls` command, Docker's client uses this property. If this
-property is not set, the client falls back to the default table
-format. For a list of supported formatting directives, see
-[**Formatting** section in the `docker config ls` documentation](config_ls.md)
-
 The property `credsStore` specifies an external binary to serve as the default
 credential store. When this property is set, `docker login` will attempt to
 store credentials in the binary specified by `docker-credential-<value>` which
