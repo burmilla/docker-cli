@@ -18,11 +18,9 @@ import (
 )
 
 type startOptions struct {
-	attach        bool
-	openStdin     bool
-	detachKeys    string
-	checkpoint    string
-	checkpointDir string
+	attach     bool
+	openStdin  bool
+	detachKeys string
 
 	containers []string
 }
@@ -45,11 +43,6 @@ func NewStartCommand(dockerCli *command.DockerCli) *cobra.Command {
 	flags.BoolVarP(&opts.attach, "attach", "a", false, "Attach STDOUT/STDERR and forward signals")
 	flags.BoolVarP(&opts.openStdin, "interactive", "i", false, "Attach container's STDIN")
 	flags.StringVar(&opts.detachKeys, "detach-keys", "", "Override the key sequence for detaching a container")
-
-	flags.StringVar(&opts.checkpoint, "checkpoint", "", "Restore from this checkpoint")
-	flags.SetAnnotation("checkpoint", "experimental", nil)
-	flags.StringVar(&opts.checkpointDir, "checkpoint-dir", "", "Use a custom checkpoint storage directory")
-	flags.SetAnnotation("checkpoint-dir", "experimental", nil)
 	return cmd
 }
 
@@ -124,13 +117,9 @@ func runStart(dockerCli *command.DockerCli, opts *startOptions) error {
 		// 3. We should open a channel for receiving status code of the container
 		// no matter it's detached, removed on daemon side(--rm) or exit normally.
 		statusChan := waitExitOrRemoved(ctx, dockerCli, c.ID, c.HostConfig.AutoRemove)
-		startOptions := types.ContainerStartOptions{
-			CheckpointID:  opts.checkpoint,
-			CheckpointDir: opts.checkpointDir,
-		}
 
 		// 4. Start the container.
-		if err := dockerCli.Client().ContainerStart(ctx, c.ID, startOptions); err != nil {
+		if err := dockerCli.Client().ContainerStart(ctx, c.ID, types.ContainerStartOptions{}); err != nil {
 			cancelFun()
 			<-cErr
 			if c.HostConfig.AutoRemove {
@@ -157,17 +146,6 @@ func runStart(dockerCli *command.DockerCli, opts *startOptions) error {
 		if status := <-statusChan; status != 0 {
 			return cli.StatusError{StatusCode: status}
 		}
-	} else if opts.checkpoint != "" {
-		if len(opts.containers) > 1 {
-			return errors.New("you cannot restore multiple containers at once")
-		}
-		container := opts.containers[0]
-		startOptions := types.ContainerStartOptions{
-			CheckpointID:  opts.checkpoint,
-			CheckpointDir: opts.checkpointDir,
-		}
-		return dockerCli.Client().ContainerStart(ctx, container, startOptions)
-
 	} else {
 		// We're not going to attach to anything.
 		// Start as many containers as we want.
