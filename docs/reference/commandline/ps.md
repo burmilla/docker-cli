@@ -28,7 +28,6 @@ Options:
                         - before=(<container-name>|<container-id>)
                         - expose=(<port>[/<proto>]|<startport-endport>/[<proto>])
                         - exited=<int> an exit code of <int>
-                        - health=(starting|healthy|unhealthy|none)
                         - id=<ID> a container's ID
                         - is-task=(true|false)
                         - label=<key> or label=<key>=<value>
@@ -91,7 +90,6 @@ The currently supported filters are:
 * since (container's id or name) - filters containers created since given id or name
 * volume (volume name or mount point) - filters containers that mount volumes.
 * network (network id or name) - filters containers connected to the provided network
-* health (starting|healthy|unhealthy|none) - filters containers based on healthcheck status
 * publish=(container's published port) - filters published ports by containers
 * expose=(container's exposed port) - filters exposed ports by containers
 

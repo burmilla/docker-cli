@@ -39,11 +39,6 @@ Options:
       --env-file value                Read in a file of environment variables (default [])
       --expose value                  Expose a port or a range of ports (default [])
       --group-add value               Add additional groups to join (default [])
-      --health-cmd string             Command to run to check health
-      --health-interval duration      Time between running the check (ns|us|ms|s|m|h) (default 0s)
-      --health-retries int            Consecutive failures needed to report unhealthy
-      --health-timeout duration       Maximum time to allow one check to run (ns|us|ms|s|m|h) (default 0s)
-      --health-start-period duration  Start period for the container to initialize before counting retries towards unstable (ns|us|ms|s|m|h) (default 0s)
       --help                          Print usage
   -h, --hostname string               Container host name
       --init                          Run an init inside the container that forwards signals and reaps processes
@@ -67,7 +62,6 @@ Options:
                                       'container:<name|id>': reuse another container's network stack
                                       'host': use the Docker host network stack
                                       '<network-name>|<network-id>': connect to a user-defined network
-      --no-healthcheck                Disable any container-specified HEALTHCHECK
       --oom-score-adj int             Tune host's OOM preferences (-1000 to 1000)
       --pid string                    PID namespace to use
       --privileged                    Give extended privileges to this container

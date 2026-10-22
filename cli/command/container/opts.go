@@ -5,7 +5,6 @@ import (
 	"path"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/docker/cli/cli/compose/loader"
@@ -23,66 +22,60 @@ var ()
 
 // containerOptions is a data object with all the options for creating a container
 type containerOptions struct {
-	attach            opts.ListOpts
-	volumes           opts.ListOpts
-	tmpfs             opts.ListOpts
-	mounts            opts.MountOpt
-	links             opts.ListOpts
-	aliases           opts.ListOpts
-	linkLocalIPs      opts.ListOpts
-	env               opts.ListOpts
-	labels            opts.ListOpts
-	devices           opts.ListOpts
-	ulimits           *opts.UlimitOpt
-	sysctls           *opts.MapOpts
-	publish           opts.ListOpts
-	expose            opts.ListOpts
-	dns               opts.ListOpts
-	dnsSearch         opts.ListOpts
-	dnsOptions        opts.ListOpts
-	extraHosts        opts.ListOpts
-	volumesFrom       opts.ListOpts
-	envFile           opts.ListOpts
-	capAdd            opts.ListOpts
-	capDrop           opts.ListOpts
-	groupAdd          opts.ListOpts
-	securityOpt       opts.ListOpts
-	labelsFile        opts.ListOpts
-	loggingOpts       opts.ListOpts
-	privileged        bool
-	pidMode           string
-	utsMode           string
-	usernsMode        string
-	publishAll        bool
-	stdin             bool
-	tty               bool
-	oomScoreAdj       int
-	containerIDFile   string
-	entrypoint        string
-	hostname          string
-	user              string
-	workingDir        string
-	netMode           string
-	macAddress        string
-	ipv4Address       string
-	ipv6Address       string
-	ipcMode           string
-	restartPolicy     string
-	readonlyRootfs    bool
-	loggingDriver     string
-	volumeDriver      string
-	stopSignal        string
-	stopTimeout       int
-	shmSize           opts.MemBytes
-	noHealthcheck     bool
-	healthCmd         string
-	healthInterval    time.Duration
-	healthTimeout     time.Duration
-	healthStartPeriod time.Duration
-	healthRetries     int
-	runtime           string
-	autoRemove        bool
-	init              bool
+	attach          opts.ListOpts
+	volumes         opts.ListOpts
+	tmpfs           opts.ListOpts
+	mounts          opts.MountOpt
+	links           opts.ListOpts
+	aliases         opts.ListOpts
+	linkLocalIPs    opts.ListOpts
+	env             opts.ListOpts
+	labels          opts.ListOpts
+	devices         opts.ListOpts
+	ulimits         *opts.UlimitOpt
+	sysctls         *opts.MapOpts
+	publish         opts.ListOpts
+	expose          opts.ListOpts
+	dns             opts.ListOpts
+	dnsSearch       opts.ListOpts
+	dnsOptions      opts.ListOpts
+	extraHosts      opts.ListOpts
+	volumesFrom     opts.ListOpts
+	envFile         opts.ListOpts
+	capAdd          opts.ListOpts
+	capDrop         opts.ListOpts
+	groupAdd        opts.ListOpts
+	securityOpt     opts.ListOpts
+	labelsFile      opts.ListOpts
+	loggingOpts     opts.ListOpts
+	privileged      bool
+	pidMode         string
+	utsMode         string
+	usernsMode      string
+	publishAll      bool
+	stdin           bool
+	tty             bool
+	oomScoreAdj     int
+	containerIDFile string
+	entrypoint      string
+	hostname        string
+	user            string
+	workingDir      string
+	netMode         string
+	macAddress      string
+	ipv4Address     string
+	ipv6Address     string
+	ipcMode         string
+	restartPolicy   string
+	readonlyRootfs  bool
+	loggingDriver   string
+	volumeDriver    string
+	stopSignal      string
+	stopTimeout     int
+	shmSize         opts.MemBytes
+	runtime         string
+	autoRemove      bool
+	init            bool
 
 	Image string
 	Args  []string
@@ -182,15 +175,6 @@ func addFlags(flags *pflag.FlagSet) *containerOptions {
 	flags.Var(&copts.volumesFrom, "volumes-from", "Mount volumes from the specified container(s)")
 	flags.VarP(&copts.volumes, "volume", "v", "Bind mount a volume")
 	flags.Var(&copts.mounts, "mount", "Attach a filesystem mount to the container")
-
-	// Health-checking
-	flags.StringVar(&copts.healthCmd, "health-cmd", "", "Command to run to check health")
-	flags.DurationVar(&copts.healthInterval, "health-interval", 0, "Time between running the check (ms|s|m|h) (default 0s)")
-	flags.IntVar(&copts.healthRetries, "health-retries", 0, "Consecutive failures needed to report unhealthy")
-	flags.DurationVar(&copts.healthTimeout, "health-timeout", 0, "Maximum time to allow one check to run (ms|s|m|h) (default 0s)")
-	flags.DurationVar(&copts.healthStartPeriod, "health-start-period", 0, "Start period for the container to initialize before starting health-retries countdown (ms|s|m|h) (default 0s)")
-	flags.SetAnnotation("health-start-period", "version", []string{"1.29"})
-	flags.BoolVar(&copts.noHealthcheck, "no-healthcheck", false, "Disable any container-specified HEALTHCHECK")
 
 	// Resource management
 	flags.StringVar(&copts.containerIDFile, "cidfile", "", "Write the container ID to the file")
@@ -373,47 +357,6 @@ func parse(flags *pflag.FlagSet, copts *containerOptions) (*containerConfig, err
 		return nil, err
 	}
 
-	// Healthcheck
-	var healthConfig *container.HealthConfig
-	haveHealthSettings := copts.healthCmd != "" ||
-		copts.healthInterval != 0 ||
-		copts.healthTimeout != 0 ||
-		copts.healthStartPeriod != 0 ||
-		copts.healthRetries != 0
-	if copts.noHealthcheck {
-		if haveHealthSettings {
-			return nil, errors.Errorf("--no-healthcheck conflicts with --health-* options")
-		}
-		test := strslice.StrSlice{"NONE"}
-		healthConfig = &container.HealthConfig{Test: test}
-	} else if haveHealthSettings {
-		var probe strslice.StrSlice
-		if copts.healthCmd != "" {
-			args := []string{"CMD-SHELL", copts.healthCmd}
-			probe = strslice.StrSlice(args)
-		}
-		if copts.healthInterval < 0 {
-			return nil, errors.Errorf("--health-interval cannot be negative")
-		}
-		if copts.healthTimeout < 0 {
-			return nil, errors.Errorf("--health-timeout cannot be negative")
-		}
-		if copts.healthRetries < 0 {
-			return nil, errors.Errorf("--health-retries cannot be negative")
-		}
-		if copts.healthStartPeriod < 0 {
-			return nil, fmt.Errorf("--health-start-period cannot be negative")
-		}
-
-		healthConfig = &container.HealthConfig{
-			Test:        probe,
-			Interval:    copts.healthInterval,
-			Timeout:     copts.healthTimeout,
-			StartPeriod: copts.healthStartPeriod,
-			Retries:     copts.healthRetries,
-		}
-	}
-
 	resources := container.Resources{
 		Ulimits: copts.ulimits.GetList(),
 		Devices: deviceMappings,
@@ -440,7 +383,6 @@ func parse(flags *pflag.FlagSet, copts *containerOptions) (*containerConfig, err
 		Entrypoint:      entrypoint,
 		WorkingDir:      copts.workingDir,
 		Labels:          opts.ConvertKVStringsToMap(labels),
-		Healthcheck:     healthConfig,
 	}
 	if flags.Changed("stop-signal") {
 		config.StopSignal = copts.stopSignal
