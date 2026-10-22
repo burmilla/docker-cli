@@ -17,12 +17,6 @@ Build a linux binary:
 $ make -f docker.Makefile binary
 ```
 
-Build binaries for all supported platforms:
-
-```
-$ make -f docker.Makefile cross
-```
-
 Run all linting:
 
 ```

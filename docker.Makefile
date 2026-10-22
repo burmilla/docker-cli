@@ -6,7 +6,6 @@
 
 DEV_DOCKER_IMAGE_NAME = docker-cli-dev
 LINTER_IMAGE_NAME = docker-cli-lint
-CROSS_IMAGE_NAME = docker-cli-cross
 MOUNTS = -v "$(CURDIR)":/go/src/github.com/docker/cli
 VERSION = $(shell cat VERSION)
 ENVVARS = -e VERSION=$(VERSION) -e GITCOMMIT
@@ -24,10 +23,6 @@ build_docker_image_arm64:
 .PHONY: build_linter_image
 build_linter_image:
 	docker build -t $(LINTER_IMAGE_NAME) -f ./dockerfiles/Dockerfile.lint .
-
-.PHONY: build_cross_image
-build_cross_image:
-	docker build -t $(CROSS_IMAGE_NAME) -f ./dockerfiles/Dockerfile.cross .
 
 
 # build executable using a container
@@ -52,11 +47,6 @@ clean: build_docker_image
 test: build_docker_image
 	docker run --rm $(MOUNTS) $(DEV_DOCKER_IMAGE_NAME) make test
 
-# build the CLI for multiple architectures using a container
-.PHONY: cross
-cross: build_cross_image
-	docker run --rm $(ENVVARS) $(MOUNTS) $(CROSS_IMAGE_NAME) make cross
-
 .PHONY: watch
 watch: build_docker_image
 	docker run --rm $(MOUNTS) $(DEV_DOCKER_IMAGE_NAME) make watch
@@ -77,9 +67,6 @@ lint: build_linter_image
 .PHONY: vendor
 vendor: build_docker_image vendor.conf
 	docker run -ti --rm $(MOUNTS) $(DEV_DOCKER_IMAGE_NAME) make vendor
-
-dynbinary: build_cross_image
-	docker run -ti --rm $(ENVVARS) $(MOUNTS) $(CROSS_IMAGE_NAME) make dynbinary
 
 ## generate man pages from go source and markdown
 .PHONY: manpages

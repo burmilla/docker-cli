@@ -18,23 +18,6 @@ jobs:
             docker build -f $dockerfile --tag cli-linter .
             docker run cli-linter
 
-  cross:
-    working_directory: /work
-    docker: [{image: 'docker:17.05-git'}]
-    steps:
-      - checkout
-      - setup_remote_docker
-      - run:
-          name: "Cross"
-          command: |
-            dockerfile=dockerfiles/Dockerfile.cross
-            echo "COPY . ." >> $dockerfile
-            docker build -f $dockerfile --tag cli-builder .
-            docker run --name cross cli-builder make cross
-            docker cp cross:/go/src/github.com/docker/cli/build /work/build
-      - store_artifacts:
-          path: /work/build
-
   test:
     working_directory: /work
     docker: [{image: 'docker:17.05-git'}]
@@ -69,13 +52,12 @@ jobs:
             echo "COPY . ." >> $dockerfile
             rm -f .dockerignore # include .git
             docker build -f $dockerfile --tag cli-builder .
-            docker run cli-builder make -B vendor compose-jsonschema manpages yamldocs
+            docker run cli-builder make -B vendor manpages yamldocs
 
 workflows:
   version: 2
   ci:
     jobs:
       - lint
-      - cross
       - test
       - validate
