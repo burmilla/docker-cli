@@ -1,3 +1,4 @@
+//go:build !windows && !solaris
 // +build !windows,!solaris
 
 package runconfig
@@ -37,10 +38,6 @@ func validateNetMode(c *container.Config, hc *container.HostConfig) error {
 
 	if hc.UTSMode.IsHost() && c.Hostname != "" {
 		return ErrConflictUTSHostname
-	}
-
-	if hc.NetworkMode.IsHost() && len(hc.Links) > 0 {
-		return ErrConflictHostNetworkAndLinks
 	}
 
 	return nil
@@ -83,14 +80,6 @@ func validateResources(hc *container.HostConfig, si *sysinfo.SysInfo) error {
 	// We may not be passed a host config, such as in the case of docker commit
 	if hc == nil {
 		return nil
-	}
-
-	if hc.Resources.CPURealtimePeriod > 0 && !si.CPURealtimePeriod {
-		return fmt.Errorf("Your kernel does not support cgroup cpu real-time period")
-	}
-
-	if hc.Resources.CPURealtimeRuntime > 0 && !si.CPURealtimeRuntime {
-		return fmt.Errorf("Your kernel does not support cgroup cpu real-time runtime")
 	}
 
 	if hc.Resources.CPURealtimePeriod != 0 && hc.Resources.CPURealtimeRuntime != 0 && hc.Resources.CPURealtimeRuntime > hc.Resources.CPURealtimePeriod {

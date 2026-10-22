@@ -7,7 +7,6 @@ import (
 
 	"github.com/docker/cli/cli/config/configfile"
 	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/pkg/homedir"
 	"github.com/pkg/errors"
 )
 
@@ -24,7 +23,7 @@ var (
 
 func init() {
 	if configDir == "" {
-		configDir = filepath.Join(homedir.Get(), configFileDir)
+		configDir = filepath.Join(userHome(), configFileDir)
 	}
 }
 
@@ -99,7 +98,7 @@ func Load(configDir string) (*configfile.ConfigFile, error) {
 	}
 
 	// Can't find latest config file so check for the old one
-	confFile := filepath.Join(homedir.Get(), oldConfigfile)
+	confFile := filepath.Join(userHome(), oldConfigfile)
 	if _, err := os.Stat(confFile); err != nil {
 		return &configFile, nil //missing file is not an error
 	}
@@ -117,4 +116,10 @@ func Load(configDir string) (*configfile.ConfigFile, error) {
 		configFile.HTTPHeaders = map[string]string{}
 	}
 	return &configFile, nil
+}
+
+// userHome returns the current user's home directory, or "" when unknown.
+func userHome() string {
+	home, _ := os.UserHomeDir()
+	return home
 }
