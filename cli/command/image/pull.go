@@ -64,30 +64,20 @@ func runPull(dockerCli command.Cli, opts pullOptions) error {
 
 	ctx := context.Background()
 
-	authConfig := command.ResolveAuthConfig(ctx, dockerCli, repoInfo.Index)
-	requestPrivilege := command.RegistryAuthenticationPrivilegedFunc(dockerCli, repoInfo.Index, "pull")
-
-	return imagePullPrivileged(ctx, dockerCli, authConfig, reference.FamiliarString(distributionRef), requestPrivilege, opts.all)
-}
-
-// imagePullPrivileged pulls the image and displays it to the output
-func imagePullPrivileged(ctx context.Context, cli command.Cli, authConfig types.AuthConfig, ref string, requestPrivilege types.RequestPrivilegeFunc, all bool) error {
-
-	encodedAuth, err := command.EncodeAuthToBase64(authConfig)
+	encodedAuth, err := command.EncodeAuthToBase64(command.ResolveAuthConfig(ctx, dockerCli, repoInfo.Index))
 	if err != nil {
 		return err
 	}
 	options := types.ImagePullOptions{
-		RegistryAuth:  encodedAuth,
-		PrivilegeFunc: requestPrivilege,
-		All:           all,
+		RegistryAuth: encodedAuth,
+		All:          opts.all,
 	}
 
-	responseBody, err := cli.Client().ImagePull(ctx, ref, options)
+	responseBody, err := dockerCli.Client().ImagePull(ctx, reference.FamiliarString(distributionRef), options)
 	if err != nil {
 		return err
 	}
 	defer responseBody.Close()
 
-	return jsonmessage.DisplayJSONMessagesToStream(responseBody, cli.Out(), nil)
+	return jsonmessage.DisplayJSONMessagesToStream(responseBody, dockerCli.Out(), nil)
 }
