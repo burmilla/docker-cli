@@ -6,7 +6,7 @@ all: binary
 # remove build artifacts
 .PHONY: clean
 clean:
-	rm -rf ./build/* ./man/man[1-9]
+	rm -rf ./build/*
 
 # run go test
 # the "-tags daemon" part is temporary
@@ -22,8 +22,3 @@ test-coverage:
 binary:
 	@echo "WARNING: binary creates a Linux executable."
 	./scripts/build/binary
-
-## generate man pages from go source and markdown
-.PHONY: manpages
-manpages:
-	scripts/docs/generate-man.sh

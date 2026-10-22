@@ -42,8 +42,3 @@ dev: build_docker_image
 	docker run -ti $(MOUNTS) -v /var/run/docker.sock:/var/run/docker.sock $(DEV_DOCKER_IMAGE_NAME) ash
 
 shell: dev
-
-## generate man pages from go source and markdown
-.PHONY: manpages
-manpages: build_docker_image
-	docker run -ti --rm $(MOUNTS) $(DEV_DOCKER_IMAGE_NAME) make manpages
