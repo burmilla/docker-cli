@@ -840,13 +840,6 @@ func Untar(tarArchive io.Reader, dest string, options *TarOptions) error {
 	return untarHandler(tarArchive, dest, options, true)
 }
 
-// UntarUncompressed reads a stream of bytes from `archive`, parses it as a tar archive,
-// and unpacks it into the directory at `dest`.
-// The archive must be an uncompressed stream.
-func UntarUncompressed(tarArchive io.Reader, dest string, options *TarOptions) error {
-	return untarHandler(tarArchive, dest, options, false)
-}
-
 // Handler for teasing out the automatic decompression
 func untarHandler(tarArchive io.Reader, dest string, options *TarOptions, decompress bool) error {
 	if tarArchive == nil {
