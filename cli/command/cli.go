@@ -3,7 +3,6 @@ package command
 import (
 	"fmt"
 	"io"
-	"net/http"
 	"os"
 	"runtime"
 
@@ -15,8 +14,6 @@ import (
 	dopts "github.com/docker/cli/opts"
 	"github.com/docker/docker/api"
 	"github.com/docker/docker/client"
-	"github.com/docker/go-connections/sockets"
-	"github.com/docker/go-connections/tlsconfig"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"golang.org/x/net/context"
@@ -172,7 +169,7 @@ func LoadDefaultConfigFile(err io.Writer) *configfile.ConfigFile {
 
 // NewAPIClientFromFlags creates a new APIClient from command line flags
 func NewAPIClientFromFlags(opts *cliflags.CommonOptions, configFile *configfile.ConfigFile) (client.APIClient, error) {
-	host, err := getServerHost(opts.Hosts, opts.TLSOptions)
+	host, err := getServerHost(opts.Hosts)
 	if err != nil {
 		return &client.Client{}, err
 	}
@@ -188,15 +185,10 @@ func NewAPIClientFromFlags(opts *cliflags.CommonOptions, configFile *configfile.
 		verStr = tmpStr
 	}
 
-	httpClient, err := newHTTPClient(host, opts.TLSOptions)
-	if err != nil {
-		return &client.Client{}, err
-	}
-
-	return client.NewClient(host, verStr, httpClient, customHeaders)
+	return client.NewClient(host, verStr, nil, customHeaders)
 }
 
-func getServerHost(hosts []string, tlsOptions *tlsconfig.Options) (host string, err error) {
+func getServerHost(hosts []string) (host string, err error) {
 	switch len(hosts) {
 	case 0:
 		host = os.Getenv("DOCKER_HOST")
@@ -206,35 +198,8 @@ func getServerHost(hosts []string, tlsOptions *tlsconfig.Options) (host string, 
 		return "", errors.New("Please specify only one -H")
 	}
 
-	host, err = dopts.ParseHost(tlsOptions != nil, host)
+	host, err = dopts.ParseHost(false, host)
 	return
-}
-
-func newHTTPClient(host string, tlsOptions *tlsconfig.Options) (*http.Client, error) {
-	if tlsOptions == nil {
-		// let the api client configure the default transport.
-		return nil, nil
-	}
-	opts := *tlsOptions
-	opts.ExclusiveRootPools = true
-	config, err := tlsconfig.Client(opts)
-	if err != nil {
-		return nil, err
-	}
-	tr := &http.Transport{
-		TLSClientConfig: config,
-	}
-	proto, addr, _, err := client.ParseHost(host)
-	if err != nil {
-		return nil, err
-	}
-
-	sockets.ConfigureTransport(tr, proto, addr)
-
-	return &http.Client{
-		Transport:     tr,
-		CheckRedirect: client.CheckRedirect,
-	}, nil
 }
 
 // UserAgent returns the user agent string used for making API requests

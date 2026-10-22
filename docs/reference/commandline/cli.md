@@ -31,11 +31,6 @@ Options:
       --help               Print usage
   -H, --host value         Daemon socket(s) to connect to (default [])
   -l, --log-level string   Set the logging level ("debug"|"info"|"warn"|"error"|"fatal") (default "info")
-      --tls                Use TLS; implied by --tlsverify
-      --tlscacert string   Trust certs signed only by this CA (default "/root/.docker/ca.pem")
-      --tlscert string     Path to TLS certificate file (default "/root/.docker/cert.pem")
-      --tlskey string      Path to TLS key file (default "/root/.docker/key.pem")
-      --tlsverify          Use TLS and verify the remote
   -v, --version            Print version information and quit
 
 Commands:
@@ -60,13 +55,11 @@ by the `docker` command line:
 
 * `DOCKER_API_VERSION` The API version to use (e.g. `1.19`)
 * `DOCKER_CONFIG` The location of your client configuration files.
-* `DOCKER_CERT_PATH` The location of your authentication keys.
 * `DOCKER_DRIVER` The graph driver to use.
 * `DOCKER_HOST` Daemon socket to connect to.
 * `DOCKER_NOWARN_KERNEL_VERSION` Prevent warnings that your Linux kernel is
   unsuitable for Docker.
 * `DOCKER_RAMDISK` If set this will disable 'pivot_root'.
-* `DOCKER_TLS_VERIFY` When set Docker uses TLS and verifies the remote.
 * `DOCKER_CONTENT_TRUST` When set Docker uses notary to sign and verify images.
   Equates to `--disable-content-trust=false` for build, create, pull, push, run.
 * `DOCKER_CONTENT_TRUST_SERVER` The URL of the Notary server to use. This defaults

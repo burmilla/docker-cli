@@ -39,8 +39,6 @@ func newDockerCommand(dockerCli *command.DockerCli) *cobra.Command {
 			return command.ShowHelp(dockerCli.Err())(cmd, args)
 		},
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			// flags must be the top-level command flags, not cmd.Flags()
-			opts.Common.SetDefaultOptions(flags)
 			dockerPreRun(opts)
 			if err := dockerCli.Initialize(opts); err != nil {
 				return err
@@ -127,8 +125,6 @@ func setValidateArgs(dockerCli *command.DockerCli, cmd *cobra.Command, flags *pf
 
 func initializeDockerCli(dockerCli *command.DockerCli, flags *pflag.FlagSet, opts *cliflags.ClientOptions) {
 	if dockerCli.Client() == nil { // when using --help, PersistentPreRun is not called, so initialization is needed.
-		// flags must be the top-level command flags, not cmd.Flags()
-		opts.Common.SetDefaultOptions(flags)
 		dockerPreRun(opts)
 		dockerCli.Initialize(opts)
 	}
