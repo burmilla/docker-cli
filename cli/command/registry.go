@@ -12,7 +12,6 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/docker/distribution/reference"
 	"github.com/docker/docker/api/types"
 	registrytypes "github.com/docker/docker/api/types/registry"
 	"github.com/docker/docker/pkg/term"
@@ -159,31 +158,4 @@ func promptWithDefault(out io.Writer, prompt string, configDefault string) {
 	} else {
 		fmt.Fprintf(out, "%s (%s): ", prompt, configDefault)
 	}
-}
-
-// RetrieveAuthTokenFromImage retrieves an encoded auth token given a complete image
-func RetrieveAuthTokenFromImage(ctx context.Context, cli Cli, image string) (string, error) {
-	// Retrieve encoded auth token from the image reference
-	authConfig, err := resolveAuthConfigFromImage(ctx, cli, image)
-	if err != nil {
-		return "", err
-	}
-	encodedAuth, err := EncodeAuthToBase64(authConfig)
-	if err != nil {
-		return "", err
-	}
-	return encodedAuth, nil
-}
-
-// resolveAuthConfigFromImage retrieves that AuthConfig using the image string
-func resolveAuthConfigFromImage(ctx context.Context, cli Cli, image string) (types.AuthConfig, error) {
-	registryRef, err := reference.ParseNormalizedNamed(image)
-	if err != nil {
-		return types.AuthConfig{}, err
-	}
-	repoInfo, err := registry.ParseRepositoryInfo(registryRef)
-	if err != nil {
-		return types.AuthConfig{}, err
-	}
-	return ResolveAuthConfig(ctx, cli, repoInfo.Index), nil
 }

@@ -113,12 +113,6 @@ func (opts *ListOpts) Type() string {
 	return "list"
 }
 
-// WithValidator returns the ListOpts with validator set.
-func (opts *ListOpts) WithValidator(validator ValidatorFctType) *ListOpts {
-	opts.validator = validator
-	return opts
-}
-
 // NamedOption is an interface that list and map options
 // with names implement.
 type NamedOption interface {
@@ -198,29 +192,6 @@ func NewMapOpts(values map[string]string, validator ValidatorFctType) *MapOpts {
 	}
 }
 
-// NamedMapOpts is a MapOpts struct with a configuration name.
-// This struct is useful to keep reference to the assigned
-// field name in the internal configuration struct.
-type NamedMapOpts struct {
-	name string
-	MapOpts
-}
-
-var _ NamedOption = &NamedMapOpts{}
-
-// NewNamedMapOpts creates a reference to a new NamedMapOpts struct.
-func NewNamedMapOpts(name string, values map[string]string, validator ValidatorFctType) *NamedMapOpts {
-	return &NamedMapOpts{
-		name:    name,
-		MapOpts: *NewMapOpts(values, validator),
-	}
-}
-
-// Name returns the name of the NamedMapOpts in the configuration.
-func (o *NamedMapOpts) Name() string {
-	return o.name
-}
-
 // ValidatorFctType defines a validator function that returns a validated string and/or an error.
 type ValidatorFctType func(val string) (string, error)
 
@@ -263,15 +234,6 @@ func validateDomain(val string) (string, error) {
 		return string(ns[1]), nil
 	}
 	return "", fmt.Errorf("%s is not a valid domain", val)
-}
-
-// ValidateLabel validates that the specified string is a valid label, and returns it.
-// Labels are in the form on key=value.
-func ValidateLabel(val string) (string, error) {
-	if strings.Count(val, "=") < 1 {
-		return "", fmt.Errorf("bad attribute format: %s", val)
-	}
-	return val, nil
 }
 
 // ValidateSysctl validates a sysctl and returns it.

@@ -174,23 +174,6 @@ func TestValidateDNSSearch(t *testing.T) {
 	}
 }
 
-func TestValidateLabel(t *testing.T) {
-	if _, err := ValidateLabel("label"); err == nil || err.Error() != "bad attribute format: label" {
-		t.Fatalf("Expected an error [bad attribute format: label], go %v", err)
-	}
-	if actual, err := ValidateLabel("key1=value1"); err != nil || actual != "key1=value1" {
-		t.Fatalf("Expected [key1=value1], got [%v,%v]", actual, err)
-	}
-	// Validate it's working with more than one =
-	if actual, err := ValidateLabel("key1=value1=value2"); err != nil {
-		t.Fatalf("Expected [key1=value1=value2], got [%v,%v]", actual, err)
-	}
-	// Validate it's working with one more
-	if actual, err := ValidateLabel("key1=value1=value2=value3"); err != nil {
-		t.Fatalf("Expected [key1=value1=value2=value2], got [%v,%v]", actual, err)
-	}
-}
-
 func logOptsValidator(val string) (string, error) {
 	allowedKeys := map[string]string{"max-size": "1", "max-file": "2"}
 	vals := strings.Split(val, "=")
@@ -213,22 +196,6 @@ func TestNamedListOpts(t *testing.T) {
 	}
 	if len(v) != 1 {
 		t.Errorf("expected foo to be in the values, got %v", v)
-	}
-}
-
-func TestNamedMapOpts(t *testing.T) {
-	tmpMap := make(map[string]string)
-	o := NewNamedMapOpts("max-name", tmpMap, nil)
-
-	o.Set("max-size=1")
-	if o.String() != "map[max-size:1]" {
-		t.Errorf("%s != [map[max-size:1]", o.String())
-	}
-	if o.Name() != "max-name" {
-		t.Errorf("%s != max-name", o.Name())
-	}
-	if _, exist := tmpMap["max-size"]; !exist {
-		t.Errorf("expected map-size to be in the values, got %v", tmpMap)
 	}
 }
 

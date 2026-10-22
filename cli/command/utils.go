@@ -52,18 +52,6 @@ func capitalizeFirst(s string) string {
 	}
 }
 
-// PrettyPrint outputs arbitrary data for human formatted output by uppercasing the first letter.
-func PrettyPrint(i interface{}) string {
-	switch t := i.(type) {
-	case nil:
-		return "None"
-	case string:
-		return capitalizeFirst(t)
-	default:
-		return capitalizeFirst(fmt.Sprintf("%s", t))
-	}
-}
-
 // PromptForConfirmation requests and checks confirmation from user.
 // This will display the provided message followed by ' [y/N] '. If
 // the user input 'y' or 'Y' it returns true other false.  If no

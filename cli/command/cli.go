@@ -14,7 +14,6 @@ import (
 	cliflags "github.com/docker/cli/cli/flags"
 	dopts "github.com/docker/cli/opts"
 	"github.com/docker/docker/api"
-	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/sockets"
 	"github.com/docker/go-connections/tlsconfig"
@@ -101,33 +100,6 @@ func (cli *DockerCli) ConfigFile() *configfile.ConfigFile {
 // connected to
 func (cli *DockerCli) ServerInfo() ServerInfo {
 	return cli.server
-}
-
-// GetAllCredentials returns all of the credentials stored in all of the
-// configured credential stores.
-func (cli *DockerCli) GetAllCredentials() (map[string]types.AuthConfig, error) {
-	auths := make(map[string]types.AuthConfig)
-	for registry := range cli.configFile.CredentialHelpers {
-		helper := cli.CredentialsStore(registry)
-		newAuths, err := helper.GetAll()
-		if err != nil {
-			return nil, err
-		}
-		addAll(auths, newAuths)
-	}
-	defaultStore := cli.CredentialsStore("")
-	newAuths, err := defaultStore.GetAll()
-	if err != nil {
-		return nil, err
-	}
-	addAll(auths, newAuths)
-	return auths, nil
-}
-
-func addAll(to, from map[string]types.AuthConfig) {
-	for reg, ac := range from {
-		to[reg] = ac
-	}
 }
 
 // CredentialsStore returns a new credentials store based
