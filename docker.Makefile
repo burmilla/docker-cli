@@ -47,8 +47,3 @@ shell: dev
 .PHONY: manpages
 manpages: build_docker_image
 	docker run -ti --rm $(MOUNTS) $(DEV_DOCKER_IMAGE_NAME) make manpages
-
-## Generate documentation YAML files consumed by docs repo
-.PHONY: yamldocs
-yamldocs: build_docker_image
-	docker run -ti --rm $(MOUNTS) $(DEV_DOCKER_IMAGE_NAME) make yamldocs

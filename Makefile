@@ -6,7 +6,7 @@ all: binary
 # remove build artifacts
 .PHONY: clean
 clean:
-	rm -rf ./build/* ./man/man[1-9] docs/yaml/gen
+	rm -rf ./build/* ./man/man[1-9]
 
 # run go test
 # the "-tags daemon" part is temporary
@@ -27,8 +27,3 @@ binary:
 .PHONY: manpages
 manpages:
 	scripts/docs/generate-man.sh
-
-## generate documentation YAML files consumed by docs repo
-.PHONY: yamldocs
-yamldocs:
-	scripts/docs/generate-yaml.sh

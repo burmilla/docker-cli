@@ -21,17 +21,12 @@ client. Each command has a reference page along with samples. If you are
 unfamiliar with the command line, you should start by reading about how to [Use
 the Docker command line](cli.md).
 
-You start the Docker daemon with the command line. How you start the daemon
-affects your Docker containers. For that reason you should also make sure to
-read the [`dockerd`](dockerd.md) reference page.
-
 ## Commands by object
 
 ### Docker management commands
 
 | Command | Description                                                        |
 |:--------|:-------------------------------------------------------------------|
-| [dockerd](dockerd.md) | Launch the Docker daemon                             |
 | [info](info.md) | Display system-wide information                            |
 | [inspect](inspect.md)| Return low-level information on a container or image  |
 | [version](version.md) | Show the Docker version information                  |
