@@ -229,28 +229,6 @@ func TestParseWithMacAddress(t *testing.T) {
 	}
 }
 
-func TestParseWithMemory(t *testing.T) {
-	invalidMemory := "--memory=invalid"
-	_, _, _, err := parseRun([]string{invalidMemory, "img", "cmd"})
-	testutil.ErrorContains(t, err, invalidMemory)
-
-	_, hostconfig := mustParse(t, "--memory=1G")
-	assert.Equal(t, int64(1073741824), hostconfig.Memory)
-}
-
-func TestParseWithMemorySwap(t *testing.T) {
-	invalidMemory := "--memory-swap=invalid"
-
-	_, _, _, err := parseRun([]string{invalidMemory, "img", "cmd"})
-	testutil.ErrorContains(t, err, invalidMemory)
-
-	_, hostconfig := mustParse(t, "--memory-swap=1G")
-	assert.Equal(t, int64(1073741824), hostconfig.MemorySwap)
-
-	_, hostconfig = mustParse(t, "--memory-swap=-1")
-	assert.Equal(t, int64(-1), hostconfig.MemorySwap)
-}
-
 func TestParseHostname(t *testing.T) {
 	validHostnames := map[string]string{
 		"hostname":    "hostname",
@@ -724,7 +702,7 @@ func callDecodeContainerConfig(volumes []string, binds []string) (*container.Con
 		Config: &container.Config{
 			Volumes: map[string]struct{}{},
 		},
-		HostConfig: &container.HostConfig{
+		InnerHostConfig: &container.HostConfig{
 			NetworkMode: "none",
 			Binds:       binds,
 		},

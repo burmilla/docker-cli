@@ -67,12 +67,6 @@ func NewRunCommand(dockerCli *command.DockerCli) *cobra.Command {
 	return cmd
 }
 
-func warnOnOomKillDisable(hostConfig container.HostConfig, stderr io.Writer) {
-	if hostConfig.OomKillDisable != nil && *hostConfig.OomKillDisable && hostConfig.Memory == 0 {
-		fmt.Fprintln(stderr, "WARNING: Disabling the OOM killer on containers without setting a '-m/--memory' limit may be dangerous.")
-	}
-}
-
 // check the DNS settings passed via --dns against localhost regexp to warn if
 // they are trying to set a DNS to a localhost address
 func warnOnLocalhostDNS(hostConfig container.HostConfig, stderr io.Writer) {
@@ -126,7 +120,6 @@ func runContainer(dockerCli *command.DockerCli, opts *runOptions, copts *contain
 	// TODO: pass this as an argument
 	cmdPath := "run"
 
-	warnOnOomKillDisable(*hostConfig, stderr)
 	warnOnLocalhostDNS(*hostConfig, stderr)
 
 	config.ArgsEscaped = false
