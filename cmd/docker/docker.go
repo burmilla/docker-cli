@@ -25,7 +25,7 @@ func newDockerCommand(dockerCli *command.DockerCli) *cobra.Command {
 	var flags *pflag.FlagSet
 
 	cmd := &cobra.Command{
-		Use:              "docker [OPTIONS] COMMAND [ARG...]",
+		Use:              "system-docker [OPTIONS] COMMAND [ARG...]",
 		Short:            "A self-sufficient runtime for containers",
 		SilenceUsage:     true,
 		SilenceErrors:    true,
@@ -149,7 +149,7 @@ func noArgs(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 	return fmt.Errorf(
-		"docker: '%s' is not a docker command.\nSee 'docker --help'", args[0])
+		"system-docker: '%s' is not a system-docker command.\nSee 'system-docker --help'", args[0])
 }
 
 func main() {

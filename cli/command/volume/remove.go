@@ -64,6 +64,6 @@ Remove one or more volumes. You cannot remove a volume that is in use by a conta
 `
 
 var removeExample = `
-$ docker volume rm hello
+$ system-docker volume rm hello
 hello
 `
