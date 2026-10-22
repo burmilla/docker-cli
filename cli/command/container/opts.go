@@ -1,10 +1,7 @@
 package container
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"path"
 	"strconv"
 	"strings"
@@ -50,7 +47,6 @@ type containerOptions struct {
 	capDrop           opts.ListOpts
 	groupAdd          opts.ListOpts
 	securityOpt       opts.ListOpts
-	storageOpt        opts.ListOpts
 	labelsFile        opts.ListOpts
 	loggingOpts       opts.ListOpts
 	privileged        bool
@@ -115,7 +111,6 @@ func addFlags(flags *pflag.FlagSet) *containerOptions {
 		loggingOpts:  opts.NewListOpts(nil),
 		publish:      opts.NewListOpts(nil),
 		securityOpt:  opts.NewListOpts(nil),
-		storageOpt:   opts.NewListOpts(nil),
 		sysctls:      opts.NewMapOpts(nil, opts.ValidateSysctl),
 		tmpfs:        opts.NewListOpts(nil),
 		ulimits:      opts.NewUlimitOpt(nil),
@@ -183,7 +178,6 @@ func addFlags(flags *pflag.FlagSet) *containerOptions {
 	flags.StringVar(&copts.loggingDriver, "log-driver", "", "Logging driver for the container")
 	flags.StringVar(&copts.volumeDriver, "volume-driver", "", "Optional volume driver for the container")
 	flags.Var(&copts.loggingOpts, "log-opt", "Log driver options")
-	flags.Var(&copts.storageOpt, "storage-opt", "Storage driver options for the container")
 	flags.Var(&copts.tmpfs, "tmpfs", "Mount a tmpfs directory")
 	flags.Var(&copts.volumesFrom, "volumes-from", "Mount volumes from the specified container(s)")
 	flags.VarP(&copts.volumes, "volume", "v", "Bind mount a volume")
@@ -379,11 +373,6 @@ func parse(flags *pflag.FlagSet, copts *containerOptions) (*containerConfig, err
 		return nil, err
 	}
 
-	storageOpts, err := parseStorageOpts(copts.storageOpt.GetAll())
-	if err != nil {
-		return nil, err
-	}
-
 	// Healthcheck
 	var healthConfig *container.HealthConfig
 	haveHealthSettings := copts.healthCmd != "" ||
@@ -489,7 +478,6 @@ func parse(flags *pflag.FlagSet, copts *containerOptions) (*containerConfig, err
 		GroupAdd:       copts.groupAdd.GetAll(),
 		RestartPolicy:  restartPolicy,
 		SecurityOpt:    securityOpts,
-		StorageOpt:     storageOpts,
 		ReadonlyRootfs: copts.readonlyRootfs,
 		LogConfig:      container.LogConfig{Type: copts.loggingDriver, Config: loggingOpts},
 		VolumeDriver:   copts.volumeDriver,
@@ -569,9 +557,10 @@ func parseLoggingOpts(loggingDriver string, loggingOpts []string) (map[string]st
 	return loggingOptsMap, nil
 }
 
-// takes a local seccomp daemon, reads the file contents for sending to the daemon
+// parseSecurityOpts validates --security-opt values. The daemon only
+// understands no-new-privileges and seccomp=unconfined.
 func parseSecurityOpts(securityOpts []string) ([]string, error) {
-	for key, opt := range securityOpts {
+	for _, opt := range securityOpts {
 		con := strings.SplitN(opt, "=", 2)
 		if len(con) == 1 && con[0] != "no-new-privileges" {
 			if strings.Contains(opt, ":") {
@@ -580,34 +569,9 @@ func parseSecurityOpts(securityOpts []string) ([]string, error) {
 				return securityOpts, errors.Errorf("Invalid --security-opt: %q", opt)
 			}
 		}
-		if con[0] == "seccomp" && con[1] != "unconfined" {
-			f, err := ioutil.ReadFile(con[1])
-			if err != nil {
-				return securityOpts, errors.Errorf("opening seccomp profile (%s) failed: %v", con[1], err)
-			}
-			b := bytes.NewBuffer(nil)
-			if err := json.Compact(b, f); err != nil {
-				return securityOpts, errors.Errorf("compacting json for seccomp profile (%s) failed: %v", con[1], err)
-			}
-			securityOpts[key] = fmt.Sprintf("seccomp=%s", b.Bytes())
-		}
 	}
 
 	return securityOpts, nil
-}
-
-// parses storage options per container into a map
-func parseStorageOpts(storageOpts []string) (map[string]string, error) {
-	m := make(map[string]string)
-	for _, option := range storageOpts {
-		if strings.Contains(option, "=") {
-			opt := strings.SplitN(option, "=", 2)
-			m[opt[0]] = opt[1]
-		} else {
-			return nil, errors.Errorf("invalid storage option")
-		}
-	}
-	return m, nil
 }
 
 // parseDevice parses a device mapping string to a container.DeviceMapping struct
