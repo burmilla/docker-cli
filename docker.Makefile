@@ -5,7 +5,6 @@
 #
 
 DEV_DOCKER_IMAGE_NAME = docker-cli-dev
-LINTER_IMAGE_NAME = docker-cli-lint
 MOUNTS = -v "$(CURDIR)":/go/src/github.com/docker/cli
 VERSION = $(shell cat VERSION)
 ENVVARS = -e VERSION=$(VERSION) -e GITCOMMIT
@@ -15,16 +14,6 @@ ENVVARS = -e VERSION=$(VERSION) -e GITCOMMIT
 build_docker_image:
 	docker build -t $(DEV_DOCKER_IMAGE_NAME) -f ./dockerfiles/Dockerfile.dev .
 
-.PHONY: build_docker_image_arm64
-build_docker_image_arm64:
-	docker build -t $(DEV_DOCKER_IMAGE_NAME) -f ./dockerfiles/Dockerfile.dev.arm64 .
-
-# build docker image having the linting tools (dockerfiles/Dockerfile.lint)
-.PHONY: build_linter_image
-build_linter_image:
-	docker build -t $(LINTER_IMAGE_NAME) -f ./dockerfiles/Dockerfile.lint .
-
-
 # build executable using a container
 binary: build_docker_image
 	docker run --rm $(ENVVARS) $(MOUNTS) $(DEV_DOCKER_IMAGE_NAME) make binary
@@ -32,7 +21,7 @@ binary: build_docker_image
 build: binary
 
 
-binary_arm64: build_docker_image_arm64
+binary_arm64: build_docker_image
 	docker run --rm $(ENVVARS) $(MOUNTS) $(DEV_DOCKER_IMAGE_NAME) make binary
 
 build_arm64: binary_arm64
@@ -47,26 +36,12 @@ clean: build_docker_image
 test: build_docker_image
 	docker run --rm $(MOUNTS) $(DEV_DOCKER_IMAGE_NAME) make test
 
-.PHONY: watch
-watch: build_docker_image
-	docker run --rm $(MOUNTS) $(DEV_DOCKER_IMAGE_NAME) make watch
-
 # start container in interactive mode for in-container development
 .PHONY: dev
 dev: build_docker_image
 	docker run -ti $(MOUNTS) -v /var/run/docker.sock:/var/run/docker.sock $(DEV_DOCKER_IMAGE_NAME) ash
 
 shell: dev
-
-# run linters in a container
-.PHONY: lint
-lint: build_linter_image
-	docker run -ti $(MOUNTS) $(LINTER_IMAGE_NAME)
-
-# download dependencies (vendor/) listed in vendor.conf, using a container
-.PHONY: vendor
-vendor: build_docker_image vendor.conf
-	docker run -ti --rm $(MOUNTS) $(DEV_DOCKER_IMAGE_NAME) make vendor
 
 ## generate man pages from go source and markdown
 .PHONY: manpages

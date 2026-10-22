@@ -18,23 +18,10 @@ test:
 test-coverage:
 	./scripts/test/unit-with-coverage $(shell go list ./... | grep -v '/vendor/')
 
-.PHONY: lint
-lint:
-	gometalinter --config gometalinter.json ./...
-
 .PHONY: binary
 binary:
 	@echo "WARNING: binary creates a Linux executable."
 	./scripts/build/binary
-
-.PHONY: watch
-watch:
-	./scripts/test/watch
-
-# Check vendor matches vendor.conf
-vendor: vendor.conf
-	vndr 2> /dev/null
-	scripts/validate/check-git-diff vendor
 
 ## generate man pages from go source and markdown
 .PHONY: manpages
