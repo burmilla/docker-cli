@@ -77,15 +77,6 @@ func prettyPrintInfo(dockerCli *command.DockerCli, info types.Info) error {
 	fmt.Fprintf(dockerCli.Out(), " %s", strings.Join(info.Plugins.Log, " "))
 	fmt.Fprintf(dockerCli.Out(), "\n")
 
-	if len(info.Runtimes) > 0 {
-		fmt.Fprintf(dockerCli.Out(), "Runtimes:")
-		for name := range info.Runtimes {
-			fmt.Fprintf(dockerCli.Out(), " %s", name)
-		}
-		fmt.Fprint(dockerCli.Out(), "\n")
-		fmt.Fprintf(dockerCli.Out(), "Default Runtime: %s\n", info.DefaultRuntime)
-	}
-
 	if info.OSType == "linux" {
 		fmt.Fprintf(dockerCli.Out(), "Init Binary: %v\n", info.InitBinary)
 

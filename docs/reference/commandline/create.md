@@ -71,7 +71,6 @@ Options:
       --restart string                Restart policy to apply when a container exits (default "no")
                                       Possible values are: no, on-failure[:max-retry], always, unless-stopped
       --rm                            Automatically remove the container when it exits
-      --runtime string                Runtime to use for this container
       --security-opt value            Security Options (default [])
       --shm-size bytes                Size of /dev/shm
                                       The format is `<number><unit>`. `number` must be greater than `0`.
