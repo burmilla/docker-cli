@@ -118,7 +118,7 @@ func ParseTCPAddr(tryAddr string, defaultAddr string) (string, error) {
 
 	u, err := url.Parse("tcp://" + addr)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("Invalid bind address format: %s", tryAddr)
 	}
 	host, port, err := net.SplitHostPort(u.Host)
 	if err != nil {
