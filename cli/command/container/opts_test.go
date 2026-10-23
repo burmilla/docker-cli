@@ -10,9 +10,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/docker/cli/internal/test/testutil"
 	"github.com/docker/docker/api/types/container"
 	networktypes "github.com/docker/docker/api/types/network"
-	"github.com/docker/docker/pkg/testutil"
 	"github.com/docker/docker/runconfig"
 	"github.com/docker/go-connections/nat"
 	"github.com/pkg/errors"
@@ -307,20 +307,20 @@ func TestParseWithExpose(t *testing.T) {
 func TestParseDevice(t *testing.T) {
 	valids := map[string]container.DeviceMapping{
 		"/dev/snd": {
-			PathOnHost:        "/dev/snd",
-			PathInContainer:   "/dev/snd",
+			PathOnHost:      "/dev/snd",
+			PathInContainer: "/dev/snd",
 		},
 		"/dev/snd:rw": {
-			PathOnHost:        "/dev/snd",
-			PathInContainer:   "/dev/snd",
+			PathOnHost:      "/dev/snd",
+			PathInContainer: "/dev/snd",
 		},
 		"/dev/snd:/something": {
-			PathOnHost:        "/dev/snd",
-			PathInContainer:   "/something",
+			PathOnHost:      "/dev/snd",
+			PathInContainer: "/something",
 		},
 		"/dev/snd:/something:rw": {
-			PathOnHost:        "/dev/snd",
-			PathInContainer:   "/something",
+			PathOnHost:      "/dev/snd",
+			PathInContainer: "/something",
 		},
 	}
 	for device, deviceMapping := range valids {

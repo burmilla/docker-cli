@@ -8,9 +8,9 @@ import (
 
 	"github.com/docker/cli/cli/config/configfile"
 	"github.com/docker/cli/cli/internal/test"
+	"github.com/docker/cli/internal/test/golden"
+	"github.com/docker/cli/internal/test/testutil"
 	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/pkg/testutil"
-	"github.com/docker/docker/pkg/testutil/golden"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )
