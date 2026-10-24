@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 
 	"github.com/docker/docker/api/types/filters"
@@ -40,30 +39,6 @@ func CopyToFile(outfile string, r io.Reader) error {
 	return nil
 }
 
-// capitalizeFirst capitalizes the first character of string
-func capitalizeFirst(s string) string {
-	switch l := len(s); l {
-	case 0:
-		return s
-	case 1:
-		return strings.ToLower(s)
-	default:
-		return strings.ToUpper(string(s[0])) + strings.ToLower(s[1:])
-	}
-}
-
-// PrettyPrint outputs arbitrary data for human formatted output by uppercasing the first letter.
-func PrettyPrint(i interface{}) string {
-	switch t := i.(type) {
-	case nil:
-		return "None"
-	case string:
-		return capitalizeFirst(t)
-	default:
-		return capitalizeFirst(fmt.Sprintf("%s", t))
-	}
-}
-
 // PromptForConfirmation requests and checks confirmation from user.
 // This will display the provided message followed by ' [y/N] '. If
 // the user input 'y' or 'Y' it returns true other false.  If no
@@ -75,12 +50,7 @@ func PromptForConfirmation(ins io.Reader, outs io.Writer, message string) bool {
 	}
 	message += " [y/N] "
 
-	fmt.Fprintf(outs, message)
-
-	// On Windows, force the use of the regular OS stdin stream.
-	if runtime.GOOS == "windows" {
-		ins = NewInStream(os.Stdin)
-	}
+	fmt.Fprint(outs, message)
 
 	reader := bufio.NewReader(ins)
 	answer, _, _ := reader.ReadLine()

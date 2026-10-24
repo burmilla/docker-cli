@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/docker/distribution/reference"
-	"github.com/docker/docker/api"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/pkg/stringid"
 	"github.com/docker/docker/pkg/stringutils"
@@ -180,7 +179,7 @@ func (c *containerContext) RunningFor() string {
 }
 
 func (c *containerContext) Ports() string {
-	return api.DisplayablePorts(c.c.Ports)
+	return displayablePorts(c.c.Ports)
 }
 
 func (c *containerContext) Status() string {

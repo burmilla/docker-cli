@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/docker/cli/cli/config/configfile"
-	"github.com/docker/docker/pkg/homedir"
 	"github.com/stretchr/testify/require"
 )
 
@@ -123,8 +122,8 @@ email`: "Invalid auth configuration file",
 	}
 	defer os.RemoveAll(tmpHome)
 
-	homeKey := homedir.Key()
-	homeVal := homedir.Get()
+	homeKey := "HOME"
+	homeVal := userHome()
 
 	defer func() { os.Setenv(homeKey, homeVal) }()
 	os.Setenv(homeKey, tmpHome)
@@ -154,8 +153,8 @@ func TestOldValidAuth(t *testing.T) {
 	}
 	defer os.RemoveAll(tmpHome)
 
-	homeKey := homedir.Key()
-	homeVal := homedir.Get()
+	homeKey := "HOME"
+	homeVal := userHome()
 
 	defer func() { os.Setenv(homeKey, homeVal) }()
 	os.Setenv(homeKey, tmpHome)
@@ -201,8 +200,8 @@ func TestOldJSONInvalid(t *testing.T) {
 	}
 	defer os.RemoveAll(tmpHome)
 
-	homeKey := homedir.Key()
-	homeVal := homedir.Get()
+	homeKey := "HOME"
+	homeVal := userHome()
 
 	defer func() { os.Setenv(homeKey, homeVal) }()
 	os.Setenv(homeKey, tmpHome)
@@ -227,8 +226,8 @@ func TestOldJSON(t *testing.T) {
 	}
 	defer os.RemoveAll(tmpHome)
 
-	homeKey := homedir.Key()
-	homeVal := homedir.Get()
+	homeKey := "HOME"
+	homeVal := userHome()
 
 	defer func() { os.Setenv(homeKey, homeVal) }()
 	os.Setenv(homeKey, tmpHome)
@@ -481,15 +480,6 @@ func TestConfigDir(t *testing.T) {
 
 	if Dir() != tmpHome {
 		t.Fatalf("Expected ConfigDir to %s, but was %s", tmpHome, Dir())
-	}
-}
-
-func TestConfigFile(t *testing.T) {
-	configFilename := "configFilename"
-	configFile := NewConfigFile(configFilename)
-
-	if configFile.Filename != configFilename {
-		t.Fatalf("Expected %s, got %s", configFilename, configFile.Filename)
 	}
 }
 

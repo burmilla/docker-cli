@@ -17,12 +17,9 @@ func NewImageCommand(dockerCli *command.DockerCli) *cobra.Command {
 		RunE:  command.ShowHelp(dockerCli.Err()),
 	}
 	cmd.AddCommand(
-		NewBuildCommand(dockerCli),
 		NewHistoryCommand(dockerCli),
-		NewImportCommand(dockerCli),
 		NewLoadCommand(dockerCli),
 		NewPullCommand(dockerCli),
-		NewPushCommand(dockerCli),
 		NewSaveCommand(dockerCli),
 		NewTagCommand(dockerCli),
 		newListCommand(dockerCli),

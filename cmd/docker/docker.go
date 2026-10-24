@@ -25,7 +25,7 @@ func newDockerCommand(dockerCli *command.DockerCli) *cobra.Command {
 	var flags *pflag.FlagSet
 
 	cmd := &cobra.Command{
-		Use:              "docker [OPTIONS] COMMAND [ARG...]",
+		Use:              "system-docker [OPTIONS] COMMAND [ARG...]",
 		Short:            "A self-sufficient runtime for containers",
 		SilenceUsage:     true,
 		SilenceErrors:    true,
@@ -39,12 +39,6 @@ func newDockerCommand(dockerCli *command.DockerCli) *cobra.Command {
 			return command.ShowHelp(dockerCli.Err())(cmd, args)
 		},
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			// daemon command is special, we redirect directly to another binary
-			if cmd.Name() == "daemon" {
-				return nil
-			}
-			// flags must be the top-level command flags, not cmd.Flags()
-			opts.Common.SetDefaultOptions(flags)
 			dockerPreRun(opts)
 			if err := dockerCli.Initialize(opts); err != nil {
 				return err
@@ -64,7 +58,6 @@ func newDockerCommand(dockerCli *command.DockerCli) *cobra.Command {
 	setHelpFunc(dockerCli, cmd, flags, opts)
 
 	cmd.SetOutput(dockerCli.Out())
-	cmd.AddCommand(newDaemonCommand())
 	commands.AddCommands(cmd, dockerCli)
 
 	setValidateArgs(dockerCli, cmd, flags, opts)
@@ -132,8 +125,6 @@ func setValidateArgs(dockerCli *command.DockerCli, cmd *cobra.Command, flags *pf
 
 func initializeDockerCli(dockerCli *command.DockerCli, flags *pflag.FlagSet, opts *cliflags.ClientOptions) {
 	if dockerCli.Client() == nil { // when using --help, PersistentPreRun is not called, so initialization is needed.
-		// flags must be the top-level command flags, not cmd.Flags()
-		opts.Common.SetDefaultOptions(flags)
 		dockerPreRun(opts)
 		dockerCli.Initialize(opts)
 	}
@@ -154,7 +145,7 @@ func noArgs(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 	return fmt.Errorf(
-		"docker: '%s' is not a docker command.\nSee 'docker --help'", args[0])
+		"system-docker: '%s' is not a system-docker command.\nSee 'system-docker --help'", args[0])
 }
 
 func main() {
@@ -200,36 +191,19 @@ func dockerPreRun(opts *cliflags.ClientOptions) {
 
 type versionDetails interface {
 	Client() client.APIClient
-	ServerInfo() command.ServerInfo
 }
 
 func hideUnsupportedFeatures(cmd *cobra.Command, details versionDetails) {
 	clientVersion := details.Client().ClientVersion()
-	osType := details.ServerInfo().OSType
-	hasExperimental := details.ServerInfo().HasExperimental
 
 	cmd.Flags().VisitAll(func(f *pflag.Flag) {
-		// hide experimental flags
-		if !hasExperimental {
-			if _, ok := f.Annotations["experimental"]; ok {
-				f.Hidden = true
-			}
-		}
-
 		// hide flags not supported by the server
-		if !isOSTypeSupported(f, osType) || !isVersionSupported(f, clientVersion) {
+		if !isVersionSupported(f, clientVersion) {
 			f.Hidden = true
 		}
 	})
 
 	for _, subcmd := range cmd.Commands() {
-		// hide experimental subcommands
-		if !hasExperimental {
-			if _, ok := subcmd.Tags["experimental"]; ok {
-				subcmd.Hidden = true
-			}
-		}
-
 		// hide subcommands not supported by the server
 		if subcmdVersion, ok := subcmd.Tags["version"]; ok && versions.LessThan(clientVersion, subcmdVersion) {
 			subcmd.Hidden = true
@@ -239,16 +213,11 @@ func hideUnsupportedFeatures(cmd *cobra.Command, details versionDetails) {
 
 func isSupported(cmd *cobra.Command, details versionDetails) error {
 	clientVersion := details.Client().ClientVersion()
-	osType := details.ServerInfo().OSType
-	hasExperimental := details.ServerInfo().HasExperimental
 
 	// Check recursively so that, e.g., `docker stack ls` returns the same output as `docker stack`
 	for curr := cmd; curr != nil; curr = curr.Parent() {
 		if cmdVersion, ok := curr.Tags["version"]; ok && versions.LessThan(clientVersion, cmdVersion) {
 			return fmt.Errorf("%s requires API version %s, but the Docker daemon API version is %s", cmd.CommandPath(), cmdVersion, clientVersion)
-		}
-		if _, ok := curr.Tags["experimental"]; ok && !hasExperimental {
-			return fmt.Errorf("%s is only supported on a Docker daemon with experimental features enabled", cmd.CommandPath())
 		}
 	}
 
@@ -258,14 +227,6 @@ func isSupported(cmd *cobra.Command, details versionDetails) error {
 		if f.Changed {
 			if !isVersionSupported(f, clientVersion) {
 				errs = append(errs, fmt.Sprintf("\"--%s\" requires API version %s, but the Docker daemon API version is %s", f.Name, getFlagAnnotation(f, "version"), clientVersion))
-				return
-			}
-			if !isOSTypeSupported(f, osType) {
-				errs = append(errs, fmt.Sprintf("\"--%s\" requires the Docker daemon to run on %s, but the Docker daemon is running on %s", f.Name, getFlagAnnotation(f, "ostype"), osType))
-				return
-			}
-			if _, ok := f.Annotations["experimental"]; ok && !hasExperimental {
-				errs = append(errs, fmt.Sprintf("\"--%s\" is only supported on a Docker daemon with experimental features enabled", f.Name))
 			}
 		}
 	})
@@ -286,13 +247,6 @@ func getFlagAnnotation(f *pflag.Flag, annotation string) string {
 func isVersionSupported(f *pflag.Flag, clientVersion string) bool {
 	if v := getFlagAnnotation(f, "version"); v != "" {
 		return versions.GreaterThanOrEqualTo(clientVersion, v)
-	}
-	return true
-}
-
-func isOSTypeSupported(f *pflag.Flag, osType string) bool {
-	if v := getFlagAnnotation(f, "ostype"); v != "" && osType != "" {
-		return osType == v
 	}
 	return true
 }

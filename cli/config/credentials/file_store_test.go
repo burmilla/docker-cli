@@ -4,7 +4,6 @@ import (
 	"io/ioutil"
 	"testing"
 
-	cliconfig "github.com/docker/cli/cli/config"
 	"github.com/docker/cli/cli/config/configfile"
 	"github.com/docker/docker/api/types"
 )
@@ -14,9 +13,7 @@ func newConfigFile(auths map[string]types.AuthConfig) *configfile.ConfigFile {
 	name := tmp.Name()
 	tmp.Close()
 
-	c := cliconfig.NewConfigFile(name)
-	c.AuthConfigs = auths
-	return c
+	return &configfile.ConfigFile{Filename: name, AuthConfigs: auths}
 }
 
 func TestFileStoreAddCredentials(t *testing.T) {

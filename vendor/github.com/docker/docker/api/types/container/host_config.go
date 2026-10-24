@@ -3,30 +3,14 @@ package container
 import (
 	"strings"
 
-	"github.com/docker/docker/api/types/blkiodev"
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/strslice"
 	"github.com/docker/go-connections/nat"
 	"github.com/docker/go-units"
 )
 
-// Isolation represents the isolation technology of a container. The supported
-// values are platform specific
-type Isolation string
-
-// IsDefault indicates the default isolation technology of a container. On Linux this
-// is the native driver. On Windows, this is a Windows Server Container.
-func (i Isolation) IsDefault() bool {
-	return strings.ToLower(string(i)) == "default" || string(i) == ""
-}
-
 // IpcMode represents the container ipc stack.
 type IpcMode string
-
-// IsPrivate indicates whether the container uses its private ipc stack.
-func (n IpcMode) IsPrivate() bool {
-	return !(n.IsHost() || n.IsContainer())
-}
 
 // IsHost indicates whether the container uses the host's ipc stack.
 func (n IpcMode) IsHost() bool {
@@ -96,7 +80,7 @@ func (n NetworkMode) ConnectedContainer() string {
 	return ""
 }
 
-//UserDefined indicates user-created network
+// UserDefined indicates user-created network
 func (n NetworkMode) UserDefined() string {
 	if n.IsUserDefined() {
 		return string(n)
@@ -128,36 +112,8 @@ func (n UsernsMode) Valid() bool {
 	return true
 }
 
-// CgroupSpec represents the cgroup to use for the container.
-type CgroupSpec string
-
-// IsContainer indicates whether the container is using another container cgroup
-func (c CgroupSpec) IsContainer() bool {
-	parts := strings.SplitN(string(c), ":", 2)
-	return len(parts) > 1 && parts[0] == "container"
-}
-
-// Valid indicates whether the cgroup spec is valid.
-func (c CgroupSpec) Valid() bool {
-	return c.IsContainer() || c == ""
-}
-
-// Container returns the name of the container whose cgroup will be used.
-func (c CgroupSpec) Container() string {
-	parts := strings.SplitN(string(c), ":", 2)
-	if len(parts) > 1 {
-		return parts[1]
-	}
-	return ""
-}
-
 // UTSMode represents the UTS namespace of the container.
 type UTSMode string
-
-// IsPrivate indicates whether the container uses its private UTS namespace.
-func (n UTSMode) IsPrivate() bool {
-	return !(n.IsHost())
-}
 
 // IsHost indicates whether the container uses the host's UTS namespace.
 func (n UTSMode) IsHost() bool {
@@ -177,11 +133,6 @@ func (n UTSMode) Valid() bool {
 
 // PidMode represents the pid namespace of the container.
 type PidMode string
-
-// IsPrivate indicates whether the container uses its own new pid namespace.
-func (n PidMode) IsPrivate() bool {
-	return !(n.IsHost() || n.IsContainer())
-}
 
 // IsHost indicates whether the container uses the host's pid namespace.
 func (n PidMode) IsHost() bool {
@@ -220,9 +171,8 @@ func (n PidMode) Container() string {
 
 // DeviceMapping represents the device mapping between the host and the container.
 type DeviceMapping struct {
-	PathOnHost        string
-	PathInContainer   string
-	CgroupPermissions string
+	PathOnHost      string
+	PathInContainer string
 }
 
 // RestartPolicy represents the restart policies of the container.
@@ -256,11 +206,6 @@ func (rp *RestartPolicy) IsUnlessStopped() bool {
 	return rp.Name == "unless-stopped"
 }
 
-// IsSame compares two RestartPolicy to see if they are the same
-func (rp *RestartPolicy) IsSame(tp *RestartPolicy) bool {
-	return rp.Name == tp.Name && rp.MaximumRetryCount == tp.MaximumRetryCount
-}
-
 // LogMode is a type to define the available modes for logging
 // These modes affect how logs are handled when log messages start piling up.
 type LogMode string
@@ -278,51 +223,10 @@ type LogConfig struct {
 	Config map[string]string
 }
 
-// Resources contains container's resources (cgroups config, ulimits...)
+// Resources contains container's resources (ulimits...)
 type Resources struct {
-	// Applicable to all platforms
-	CPUShares int64 `json:"CpuShares"` // CPU shares (relative weight vs. other containers)
-	Memory    int64 // Memory limit (in bytes)
-	NanoCPUs  int64 `json:"NanoCpus"` // CPU quota in units of 10<sup>-9</sup> CPUs.
-
-	// Applicable to UNIX platforms
-	CgroupParent         string // Parent cgroup.
-	BlkioWeight          uint16 // Block IO weight (relative weight vs. other containers)
-	BlkioWeightDevice    []*blkiodev.WeightDevice
-	BlkioDeviceReadBps   []*blkiodev.ThrottleDevice
-	BlkioDeviceWriteBps  []*blkiodev.ThrottleDevice
-	BlkioDeviceReadIOps  []*blkiodev.ThrottleDevice
-	BlkioDeviceWriteIOps []*blkiodev.ThrottleDevice
-	CPUPeriod            int64           `json:"CpuPeriod"`          // CPU CFS (Completely Fair Scheduler) period
-	CPUQuota             int64           `json:"CpuQuota"`           // CPU CFS (Completely Fair Scheduler) quota
-	CPURealtimePeriod    int64           `json:"CpuRealtimePeriod"`  // CPU real-time period
-	CPURealtimeRuntime   int64           `json:"CpuRealtimeRuntime"` // CPU real-time runtime
-	CpusetCpus           string          // CpusetCpus 0-2, 0,1
-	CpusetMems           string          // CpusetMems 0-2, 0,1
-	Devices              []DeviceMapping // List of devices to map inside the container
-	DeviceCgroupRules    []string        // List of rule to be added to the device cgroup
-	DiskQuota            int64           // Disk limit (in bytes)
-	KernelMemory         int64           // Kernel memory limit (in bytes)
-	MemoryReservation    int64           // Memory soft limit (in bytes)
-	MemorySwap           int64           // Total memory usage (memory + swap); set `-1` to enable unlimited swap
-	MemorySwappiness     *int64          // Tuning container memory swappiness behaviour
-	OomKillDisable       *bool           // Whether to disable OOM Killer or not
-	PidsLimit            int64           // Setting pids limit for a container
-	Ulimits              []*units.Ulimit // List of ulimits to be set in the container
-
-	// Applicable to Windows
-	CPUCount           int64  `json:"CpuCount"`   // CPU count
-	CPUPercent         int64  `json:"CpuPercent"` // CPU percent
-	IOMaximumIOps      uint64 // Maximum IOps for the container system drive
-	IOMaximumBandwidth uint64 // Maximum IO in bytes per second for the container system drive
-}
-
-// UpdateConfig holds the mutable attributes of a Container.
-// Those attributes can be updated at runtime.
-type UpdateConfig struct {
-	// Contains container's resources (cgroups, ulimits)
-	Resources
-	RestartPolicy RestartPolicy
+	Devices []DeviceMapping // List of devices to map inside the container
+	Ulimits []*units.Ulimit // List of ulimits to be set in the container
 }
 
 // HostConfig the non-portable Config structure of a container.
@@ -349,27 +253,21 @@ type HostConfig struct {
 	ExtraHosts      []string          // List of extra hosts
 	GroupAdd        []string          // List of additional groups that the container process will run as
 	IpcMode         IpcMode           // IPC namespace to use for the container
-	Cgroup          CgroupSpec        // Cgroup to use for the container
 	Links           []string          // List of links (in the name:alias form)
 	OomScoreAdj     int               // Container preference for OOM-killing
 	PidMode         PidMode           // PID namespace to use for the container
 	Privileged      bool              // Is the container in privileged mode
 	PublishAllPorts bool              // Should docker publish all exposed port for the container
 	ReadonlyRootfs  bool              // Is the container root filesystem in read-only
-	SecurityOpt     []string          // List of string values to customize labels for MLS systems, such as SELinux.
+	SecurityOpt     []string          // List of string values to customize labels for MLS systems, such as AppArmor.
 	StorageOpt      map[string]string `json:",omitempty"` // Storage driver options per container.
 	Tmpfs           map[string]string `json:",omitempty"` // List of tmpfs (mounts) used for the container
 	UTSMode         UTSMode           // UTS namespace to use for the container
 	UsernsMode      UsernsMode        // The user namespace to use for the container
 	ShmSize         int64             // Total shm memory usage
 	Sysctls         map[string]string `json:",omitempty"` // List of Namespaced sysctls used for the container
-	Runtime         string            `json:",omitempty"` // Runtime to use with this container
 
-	// Applicable to Windows
-	ConsoleSize [2]uint   // Initial console size (height,width)
-	Isolation   Isolation // Isolation technology of the container (e.g. default, hyperv)
-
-	// Contains container's resources (cgroups, ulimits)
+	// Contains container's resources (ulimits)
 	Resources
 
 	// Mounts specs used by the container

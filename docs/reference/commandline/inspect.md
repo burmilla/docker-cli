@@ -43,7 +43,7 @@ describes all the details of the format.
 
 ## Specify target type (--type)
 
-`--type container|image|node|network|secret|service|volume|task|plugin`
+`--type container|image|network|volume`
 
 The `docker inspect` command matches any type of object by either ID or name.
 In some cases multiple type of objects (for example, a container and a volume)

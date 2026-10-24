@@ -6,7 +6,6 @@ import (
 	"net/http/httputil"
 	"os"
 	"regexp"
-	"runtime"
 	"strings"
 	"syscall"
 
@@ -63,15 +62,8 @@ func NewRunCommand(dockerCli *command.DockerCli) *cobra.Command {
 	// with hostname
 	flags.Bool("help", false, "Print usage")
 
-	command.AddTrustVerificationFlags(flags)
 	copts = addFlags(flags)
 	return cmd
-}
-
-func warnOnOomKillDisable(hostConfig container.HostConfig, stderr io.Writer) {
-	if hostConfig.OomKillDisable != nil && *hostConfig.OomKillDisable && hostConfig.Memory == 0 {
-		fmt.Fprintln(stderr, "WARNING: Disabling the OOM killer on containers without setting a '-m/--memory' limit may be dangerous.")
-	}
 }
 
 // check the DNS settings passed via --dns against localhost regexp to warn if
@@ -127,7 +119,6 @@ func runContainer(dockerCli *command.DockerCli, opts *runOptions, copts *contain
 	// TODO: pass this as an argument
 	cmdPath := "run"
 
-	warnOnOomKillDisable(*hostConfig, stderr)
 	warnOnLocalhostDNS(*hostConfig, stderr)
 
 	config.ArgsEscaped = false
@@ -150,13 +141,6 @@ func runContainer(dockerCli *command.DockerCli, opts *runOptions, copts *contain
 	// Disable sigProxy when in TTY mode
 	if config.Tty {
 		opts.sigProxy = false
-	}
-
-	// Telling the Windows daemon the initial size of the tty during start makes
-	// a far better user experience rather than relying on subsequent resizes
-	// to cause things to catch up.
-	if runtime.GOOS == "windows" {
-		hostConfig.ConsoleSize[0], hostConfig.ConsoleSize[1] = dockerCli.Out().GetTtySize()
 	}
 
 	ctx, cancelFun := context.WithCancel(context.Background())

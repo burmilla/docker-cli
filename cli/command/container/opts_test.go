@@ -9,11 +9,10 @@ import (
 	"runtime"
 	"strings"
 	"testing"
-	"time"
 
+	"github.com/docker/cli/internal/test/testutil"
 	"github.com/docker/docker/api/types/container"
 	networktypes "github.com/docker/docker/api/types/network"
-	"github.com/docker/docker/pkg/testutil"
 	"github.com/docker/docker/runconfig"
 	"github.com/docker/go-connections/nat"
 	"github.com/pkg/errors"
@@ -229,28 +228,6 @@ func TestParseWithMacAddress(t *testing.T) {
 	}
 }
 
-func TestParseWithMemory(t *testing.T) {
-	invalidMemory := "--memory=invalid"
-	_, _, _, err := parseRun([]string{invalidMemory, "img", "cmd"})
-	testutil.ErrorContains(t, err, invalidMemory)
-
-	_, hostconfig := mustParse(t, "--memory=1G")
-	assert.Equal(t, int64(1073741824), hostconfig.Memory)
-}
-
-func TestParseWithMemorySwap(t *testing.T) {
-	invalidMemory := "--memory-swap=invalid"
-
-	_, _, _, err := parseRun([]string{invalidMemory, "img", "cmd"})
-	testutil.ErrorContains(t, err, invalidMemory)
-
-	_, hostconfig := mustParse(t, "--memory-swap=1G")
-	assert.Equal(t, int64(1073741824), hostconfig.MemorySwap)
-
-	_, hostconfig = mustParse(t, "--memory-swap=-1")
-	assert.Equal(t, int64(-1), hostconfig.MemorySwap)
-}
-
 func TestParseHostname(t *testing.T) {
 	validHostnames := map[string]string{
 		"hostname":    "hostname",
@@ -330,24 +307,20 @@ func TestParseWithExpose(t *testing.T) {
 func TestParseDevice(t *testing.T) {
 	valids := map[string]container.DeviceMapping{
 		"/dev/snd": {
-			PathOnHost:        "/dev/snd",
-			PathInContainer:   "/dev/snd",
-			CgroupPermissions: "rwm",
+			PathOnHost:      "/dev/snd",
+			PathInContainer: "/dev/snd",
 		},
 		"/dev/snd:rw": {
-			PathOnHost:        "/dev/snd",
-			PathInContainer:   "/dev/snd",
-			CgroupPermissions: "rw",
+			PathOnHost:      "/dev/snd",
+			PathInContainer: "/dev/snd",
 		},
 		"/dev/snd:/something": {
-			PathOnHost:        "/dev/snd",
-			PathInContainer:   "/something",
-			CgroupPermissions: "rwm",
+			PathOnHost:      "/dev/snd",
+			PathInContainer: "/something",
 		},
 		"/dev/snd:/something:rw": {
-			PathOnHost:        "/dev/snd",
-			PathInContainer:   "/something",
-			CgroupPermissions: "rw",
+			PathOnHost:      "/dev/snd",
+			PathInContainer: "/something",
 		},
 	}
 	for device, deviceMapping := range valids {
@@ -449,45 +422,6 @@ func TestParseRestartPolicyAutoRemove(t *testing.T) {
 	_, _, _, err := parseRun([]string{"--rm", "--restart=always", "img", "cmd"})
 	if err == nil || err.Error() != expected {
 		t.Fatalf("Expected error %v, but got none", expected)
-	}
-}
-
-func TestParseHealth(t *testing.T) {
-	checkOk := func(args ...string) *container.HealthConfig {
-		config, _, _, err := parseRun(args)
-		if err != nil {
-			t.Fatalf("%#v: %v", args, err)
-		}
-		return config.Healthcheck
-	}
-	checkError := func(expected string, args ...string) {
-		config, _, _, err := parseRun(args)
-		if err == nil {
-			t.Fatalf("Expected error, but got %#v", config)
-		}
-		if err.Error() != expected {
-			t.Fatalf("Expected %#v, got %#v", expected, err)
-		}
-	}
-	health := checkOk("--no-healthcheck", "img", "cmd")
-	if health == nil || len(health.Test) != 1 || health.Test[0] != "NONE" {
-		t.Fatalf("--no-healthcheck failed: %#v", health)
-	}
-
-	health = checkOk("--health-cmd=/check.sh -q", "img", "cmd")
-	if len(health.Test) != 2 || health.Test[0] != "CMD-SHELL" || health.Test[1] != "/check.sh -q" {
-		t.Fatalf("--health-cmd: got %#v", health.Test)
-	}
-	if health.Timeout != 0 {
-		t.Fatalf("--health-cmd: timeout = %s", health.Timeout)
-	}
-
-	checkError("--no-healthcheck conflicts with --health-* options",
-		"--no-healthcheck", "--health-cmd=/check.sh -q", "img", "cmd")
-
-	health = checkOk("--health-timeout=2s", "--health-retries=3", "--health-interval=4.5s", "--health-start-period=5s", "img", "cmd")
-	if health.Timeout != 2*time.Second || health.Retries != 3 || health.Interval != 4500*time.Millisecond || health.StartPeriod != 5*time.Second {
-		t.Fatalf("--health-*: got %#v", health)
 	}
 }
 
@@ -728,7 +662,7 @@ func callDecodeContainerConfig(volumes []string, binds []string) (*container.Con
 		Config: &container.Config{
 			Volumes: map[string]struct{}{},
 		},
-		HostConfig: &container.HostConfig{
+		InnerHostConfig: &container.HostConfig{
 			NetworkMode: "none",
 			Binds:       binds,
 		},

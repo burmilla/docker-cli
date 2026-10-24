@@ -31,11 +31,6 @@ Options:
       --help               Print usage
   -H, --host value         Daemon socket(s) to connect to (default [])
   -l, --log-level string   Set the logging level ("debug"|"info"|"warn"|"error"|"fatal") (default "info")
-      --tls                Use TLS; implied by --tlsverify
-      --tlscacert string   Trust certs signed only by this CA (default "/root/.docker/ca.pem")
-      --tlscert string     Path to TLS certificate file (default "/root/.docker/cert.pem")
-      --tlskey string      Path to TLS key file (default "/root/.docker/key.pem")
-      --tlsverify          Use TLS and verify the remote
   -v, --version            Print version information and quit
 
 Commands:
@@ -60,17 +55,11 @@ by the `docker` command line:
 
 * `DOCKER_API_VERSION` The API version to use (e.g. `1.19`)
 * `DOCKER_CONFIG` The location of your client configuration files.
-* `DOCKER_CERT_PATH` The location of your authentication keys.
 * `DOCKER_DRIVER` The graph driver to use.
 * `DOCKER_HOST` Daemon socket to connect to.
 * `DOCKER_NOWARN_KERNEL_VERSION` Prevent warnings that your Linux kernel is
   unsuitable for Docker.
 * `DOCKER_RAMDISK` If set this will disable 'pivot_root'.
-* `DOCKER_TLS_VERIFY` When set Docker uses TLS and verifies the remote.
-* `DOCKER_CONTENT_TRUST` When set Docker uses notary to sign and verify images.
-  Equates to `--disable-content-trust=false` for build, create, pull, push, run.
-* `DOCKER_CONTENT_TRUST_SERVER` The URL of the Notary server to use. This defaults
-  to the same URL as the registry.
 * `DOCKER_HIDE_LEGACY_COMMANDS` When set, Docker hides "legacy" top-level commands (such as `docker rm`, and
   `docker pull`) in `docker help` output, and only `Management commands` per object-type (e.g., `docker container`) are
   printed. This may become the default in a future release, at which point this environment-variable is removed.
@@ -133,54 +122,6 @@ Docker's client uses this property. If this property is not set, the client
 falls back to the default table format. For a list of supported formatting
 directives, see the [**Formatting** section in the `docker images` documentation](images.md)
 
-The property `pluginsFormat` specifies the default format for `docker plugin ls` output.
-When the `--format` flag is not provided with the `docker plugin ls` command,
-Docker's client uses this property. If this property is not set, the client
-falls back to the default table format. For a list of supported formatting
-directives, see the [**Formatting** section in the `docker plugin ls` documentation](plugin_ls.md)
-
-The property `servicesFormat` specifies the default format for `docker
-service ls` output. When the `--format` flag is not provided with the
-`docker service ls` command, Docker's client uses this property. If this
-property is not set, the client falls back to the default json format. For a
-list of supported formatting directives, see the
-[**Formatting** section in the `docker service ls` documentation](service_ls.md)
-
-The property `serviceInspectFormat` specifies the default format for `docker
-service inspect` output. When the `--format` flag is not provided with the
-`docker service inspect` command, Docker's client uses this property. If this
-property is not set, the client falls back to the default json format. For a
-list of supported formatting directives, see the
-[**Formatting** section in the `docker service inspect` documentation](service_inspect.md)
-
-The property `statsFormat` specifies the default format for `docker
-stats` output. When the `--format` flag is not provided with the
-`docker stats` command, Docker's client uses this property. If this
-property is not set, the client falls back to the default table
-format. For a list of supported formatting directives, see
-[**Formatting** section in the `docker stats` documentation](stats.md)
-
-The property `secretFormat` specifies the default format for `docker
-secret ls` output. When the `--format` flag is not provided with the
-`docker secret ls` command, Docker's client uses this property. If this
-property is not set, the client falls back to the default table
-format. For a list of supported formatting directives, see
-[**Formatting** section in the `docker secret ls` documentation](secret_ls.md)
-
-
-The property `nodesFormat` specifies the default format for `docker node ls` output.
-When the `--format` flag is not provided with the `docker node ls` command,
-Docker's client uses the value of `nodesFormat`. If the value of `nodesFormat` is not set,
-the client uses the default table format. For a list of supported formatting
-directives, see the [**Formatting** section in the `docker node ls` documentation](node_ls.md)
-
-The property `configFormat` specifies the default format for `docker
-config ls` output. When the `--format` flag is not provided with the
-`docker config ls` command, Docker's client uses this property. If this
-property is not set, the client falls back to the default table
-format. For a list of supported formatting directives, see
-[**Formatting** section in the `docker config ls` documentation](config_ls.md)
-
 The property `credsStore` specifies an external binary to serve as the default
 credential store. When this property is set, `docker login` will attempt to
 store credentials in the binary specified by `docker-credential-<value>` which
@@ -237,15 +178,6 @@ Following is a sample `config.json` file:
   }
 }
 ```
-
-### Notary
-
-If using your own notary server and a self-signed certificate or an internal
-Certificate Authority, you need to place the certificate at
-`tls/<registry_url>/ca.crt` in your docker config directory.
-
-Alternatively you can trust the certificate globally by adding it to your system's
-list of root Certificate Authorities.
 
 ## Examples
 

@@ -1,15 +1,10 @@
 package container
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"path"
-	"regexp"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/docker/cli/cli/compose/loader"
@@ -23,101 +18,63 @@ import (
 	"github.com/spf13/pflag"
 )
 
-var (
-	deviceCgroupRuleRegexp = regexp.MustCompile(`^[acb] ([0-9]+|\*):([0-9]+|\*) [rwm]{1,3}$`)
-)
+var ()
 
 // containerOptions is a data object with all the options for creating a container
 type containerOptions struct {
-	attach             opts.ListOpts
-	volumes            opts.ListOpts
-	tmpfs              opts.ListOpts
-	mounts             opts.MountOpt
-	blkioWeightDevice  opts.WeightdeviceOpt
-	deviceReadBps      opts.ThrottledeviceOpt
-	deviceWriteBps     opts.ThrottledeviceOpt
-	links              opts.ListOpts
-	aliases            opts.ListOpts
-	linkLocalIPs       opts.ListOpts
-	deviceReadIOps     opts.ThrottledeviceOpt
-	deviceWriteIOps    opts.ThrottledeviceOpt
-	env                opts.ListOpts
-	labels             opts.ListOpts
-	deviceCgroupRules  opts.ListOpts
-	devices            opts.ListOpts
-	ulimits            *opts.UlimitOpt
-	sysctls            *opts.MapOpts
-	publish            opts.ListOpts
-	expose             opts.ListOpts
-	dns                opts.ListOpts
-	dnsSearch          opts.ListOpts
-	dnsOptions         opts.ListOpts
-	extraHosts         opts.ListOpts
-	volumesFrom        opts.ListOpts
-	envFile            opts.ListOpts
-	capAdd             opts.ListOpts
-	capDrop            opts.ListOpts
-	groupAdd           opts.ListOpts
-	securityOpt        opts.ListOpts
-	storageOpt         opts.ListOpts
-	labelsFile         opts.ListOpts
-	loggingOpts        opts.ListOpts
-	privileged         bool
-	pidMode            string
-	utsMode            string
-	usernsMode         string
-	publishAll         bool
-	stdin              bool
-	tty                bool
-	oomKillDisable     bool
-	oomScoreAdj        int
-	containerIDFile    string
-	entrypoint         string
-	hostname           string
-	memory             opts.MemBytes
-	memoryReservation  opts.MemBytes
-	memorySwap         opts.MemSwapBytes
-	kernelMemory       opts.MemBytes
-	user               string
-	workingDir         string
-	cpuCount           int64
-	cpuShares          int64
-	cpuPercent         int64
-	cpuPeriod          int64
-	cpuRealtimePeriod  int64
-	cpuRealtimeRuntime int64
-	cpuQuota           int64
-	cpus               opts.NanoCPUs
-	cpusetCpus         string
-	cpusetMems         string
-	blkioWeight        uint16
-	ioMaxBandwidth     opts.MemBytes
-	ioMaxIOps          uint64
-	swappiness         int64
-	netMode            string
-	macAddress         string
-	ipv4Address        string
-	ipv6Address        string
-	ipcMode            string
-	pidsLimit          int64
-	restartPolicy      string
-	readonlyRootfs     bool
-	loggingDriver      string
-	cgroupParent       string
-	volumeDriver       string
-	stopSignal         string
-	stopTimeout        int
-	isolation          string
-	shmSize            opts.MemBytes
-	noHealthcheck      bool
-	healthCmd          string
-	healthInterval     time.Duration
-	healthTimeout      time.Duration
-	healthStartPeriod  time.Duration
-	healthRetries      int
-	runtime            string
-	autoRemove         bool
-	init               bool
+	attach          opts.ListOpts
+	volumes         opts.ListOpts
+	tmpfs           opts.ListOpts
+	mounts          opts.MountOpt
+	links           opts.ListOpts
+	aliases         opts.ListOpts
+	linkLocalIPs    opts.ListOpts
+	env             opts.ListOpts
+	labels          opts.ListOpts
+	devices         opts.ListOpts
+	ulimits         *opts.UlimitOpt
+	sysctls         *opts.MapOpts
+	publish         opts.ListOpts
+	expose          opts.ListOpts
+	dns             opts.ListOpts
+	dnsSearch       opts.ListOpts
+	dnsOptions      opts.ListOpts
+	extraHosts      opts.ListOpts
+	volumesFrom     opts.ListOpts
+	envFile         opts.ListOpts
+	capAdd          opts.ListOpts
+	capDrop         opts.ListOpts
+	groupAdd        opts.ListOpts
+	securityOpt     opts.ListOpts
+	labelsFile      opts.ListOpts
+	loggingOpts     opts.ListOpts
+	privileged      bool
+	pidMode         string
+	utsMode         string
+	usernsMode      string
+	publishAll      bool
+	stdin           bool
+	tty             bool
+	oomScoreAdj     int
+	containerIDFile string
+	entrypoint      string
+	hostname        string
+	user            string
+	workingDir      string
+	netMode         string
+	macAddress      string
+	ipv4Address     string
+	ipv6Address     string
+	ipcMode         string
+	restartPolicy   string
+	readonlyRootfs  bool
+	loggingDriver   string
+	volumeDriver    string
+	stopSignal      string
+	stopTimeout     int
+	shmSize         opts.MemBytes
+	autoRemove      bool
+	init            bool
 
 	Image string
 	Args  []string
@@ -126,43 +83,35 @@ type containerOptions struct {
 // addFlags adds all command line flags that will be used by parse to the FlagSet
 func addFlags(flags *pflag.FlagSet) *containerOptions {
 	copts := &containerOptions{
-		aliases:           opts.NewListOpts(nil),
-		attach:            opts.NewListOpts(validateAttach),
-		blkioWeightDevice: opts.NewWeightdeviceOpt(opts.ValidateWeightDevice),
-		capAdd:            opts.NewListOpts(nil),
-		capDrop:           opts.NewListOpts(nil),
-		dns:               opts.NewListOpts(opts.ValidateIPAddress),
-		dnsOptions:        opts.NewListOpts(nil),
-		dnsSearch:         opts.NewListOpts(opts.ValidateDNSSearch),
-		deviceCgroupRules: opts.NewListOpts(validateDeviceCgroupRule),
-		deviceReadBps:     opts.NewThrottledeviceOpt(opts.ValidateThrottleBpsDevice),
-		deviceReadIOps:    opts.NewThrottledeviceOpt(opts.ValidateThrottleIOpsDevice),
-		deviceWriteBps:    opts.NewThrottledeviceOpt(opts.ValidateThrottleBpsDevice),
-		deviceWriteIOps:   opts.NewThrottledeviceOpt(opts.ValidateThrottleIOpsDevice),
-		devices:           opts.NewListOpts(validateDevice),
-		env:               opts.NewListOpts(opts.ValidateEnv),
-		envFile:           opts.NewListOpts(nil),
-		expose:            opts.NewListOpts(nil),
-		extraHosts:        opts.NewListOpts(opts.ValidateExtraHost),
-		groupAdd:          opts.NewListOpts(nil),
-		labels:            opts.NewListOpts(opts.ValidateEnv),
-		labelsFile:        opts.NewListOpts(nil),
-		linkLocalIPs:      opts.NewListOpts(nil),
-		links:             opts.NewListOpts(opts.ValidateLink),
-		loggingOpts:       opts.NewListOpts(nil),
-		publish:           opts.NewListOpts(nil),
-		securityOpt:       opts.NewListOpts(nil),
-		storageOpt:        opts.NewListOpts(nil),
-		sysctls:           opts.NewMapOpts(nil, opts.ValidateSysctl),
-		tmpfs:             opts.NewListOpts(nil),
-		ulimits:           opts.NewUlimitOpt(nil),
-		volumes:           opts.NewListOpts(nil),
-		volumesFrom:       opts.NewListOpts(nil),
+		aliases:      opts.NewListOpts(nil),
+		attach:       opts.NewListOpts(validateAttach),
+		capAdd:       opts.NewListOpts(nil),
+		capDrop:      opts.NewListOpts(nil),
+		dns:          opts.NewListOpts(opts.ValidateIPAddress),
+		dnsOptions:   opts.NewListOpts(nil),
+		dnsSearch:    opts.NewListOpts(opts.ValidateDNSSearch),
+		devices:      opts.NewListOpts(validateDevice),
+		env:          opts.NewListOpts(opts.ValidateEnv),
+		envFile:      opts.NewListOpts(nil),
+		expose:       opts.NewListOpts(nil),
+		extraHosts:   opts.NewListOpts(opts.ValidateExtraHost),
+		groupAdd:     opts.NewListOpts(nil),
+		labels:       opts.NewListOpts(opts.ValidateEnv),
+		labelsFile:   opts.NewListOpts(nil),
+		linkLocalIPs: opts.NewListOpts(nil),
+		links:        opts.NewListOpts(opts.ValidateLink),
+		loggingOpts:  opts.NewListOpts(nil),
+		publish:      opts.NewListOpts(nil),
+		securityOpt:  opts.NewListOpts(nil),
+		sysctls:      opts.NewMapOpts(nil, opts.ValidateSysctl),
+		tmpfs:        opts.NewListOpts(nil),
+		ulimits:      opts.NewUlimitOpt(nil),
+		volumes:      opts.NewListOpts(nil),
+		volumesFrom:  opts.NewListOpts(nil),
 	}
 
 	// General purpose flags
 	flags.VarP(&copts.attach, "attach", "a", "Attach to STDIN, STDOUT or STDERR")
-	flags.Var(&copts.deviceCgroupRules, "device-cgroup-rule", "Add a rule to the cgroup allowed devices list")
 	flags.Var(&copts.devices, "device", "Add a host device to the container")
 	flags.VarP(&copts.env, "env", "e", "Set environment variables")
 	flags.Var(&copts.envFile, "env-file", "Read in a file of environment variables")
@@ -221,65 +170,20 @@ func addFlags(flags *pflag.FlagSet) *containerOptions {
 	flags.StringVar(&copts.loggingDriver, "log-driver", "", "Logging driver for the container")
 	flags.StringVar(&copts.volumeDriver, "volume-driver", "", "Optional volume driver for the container")
 	flags.Var(&copts.loggingOpts, "log-opt", "Log driver options")
-	flags.Var(&copts.storageOpt, "storage-opt", "Storage driver options for the container")
 	flags.Var(&copts.tmpfs, "tmpfs", "Mount a tmpfs directory")
 	flags.Var(&copts.volumesFrom, "volumes-from", "Mount volumes from the specified container(s)")
 	flags.VarP(&copts.volumes, "volume", "v", "Bind mount a volume")
 	flags.Var(&copts.mounts, "mount", "Attach a filesystem mount to the container")
 
-	// Health-checking
-	flags.StringVar(&copts.healthCmd, "health-cmd", "", "Command to run to check health")
-	flags.DurationVar(&copts.healthInterval, "health-interval", 0, "Time between running the check (ms|s|m|h) (default 0s)")
-	flags.IntVar(&copts.healthRetries, "health-retries", 0, "Consecutive failures needed to report unhealthy")
-	flags.DurationVar(&copts.healthTimeout, "health-timeout", 0, "Maximum time to allow one check to run (ms|s|m|h) (default 0s)")
-	flags.DurationVar(&copts.healthStartPeriod, "health-start-period", 0, "Start period for the container to initialize before starting health-retries countdown (ms|s|m|h) (default 0s)")
-	flags.SetAnnotation("health-start-period", "version", []string{"1.29"})
-	flags.BoolVar(&copts.noHealthcheck, "no-healthcheck", false, "Disable any container-specified HEALTHCHECK")
-
 	// Resource management
-	flags.Uint16Var(&copts.blkioWeight, "blkio-weight", 0, "Block IO (relative weight), between 10 and 1000, or 0 to disable (default 0)")
-	flags.Var(&copts.blkioWeightDevice, "blkio-weight-device", "Block IO weight (relative device weight)")
 	flags.StringVar(&copts.containerIDFile, "cidfile", "", "Write the container ID to the file")
-	flags.StringVar(&copts.cpusetCpus, "cpuset-cpus", "", "CPUs in which to allow execution (0-3, 0,1)")
-	flags.StringVar(&copts.cpusetMems, "cpuset-mems", "", "MEMs in which to allow execution (0-3, 0,1)")
-	flags.Int64Var(&copts.cpuCount, "cpu-count", 0, "CPU count (Windows only)")
-	flags.SetAnnotation("cpu-count", "ostype", []string{"windows"})
-	flags.Int64Var(&copts.cpuPercent, "cpu-percent", 0, "CPU percent (Windows only)")
-	flags.SetAnnotation("cpu-percent", "ostype", []string{"windows"})
-	flags.Int64Var(&copts.cpuPeriod, "cpu-period", 0, "Limit CPU CFS (Completely Fair Scheduler) period")
-	flags.Int64Var(&copts.cpuQuota, "cpu-quota", 0, "Limit CPU CFS (Completely Fair Scheduler) quota")
-	flags.Int64Var(&copts.cpuRealtimePeriod, "cpu-rt-period", 0, "Limit CPU real-time period in microseconds")
-	flags.SetAnnotation("cpu-rt-period", "version", []string{"1.25"})
-	flags.Int64Var(&copts.cpuRealtimeRuntime, "cpu-rt-runtime", 0, "Limit CPU real-time runtime in microseconds")
-	flags.SetAnnotation("cpu-rt-runtime", "version", []string{"1.25"})
-	flags.Int64VarP(&copts.cpuShares, "cpu-shares", "c", 0, "CPU shares (relative weight)")
-	flags.Var(&copts.cpus, "cpus", "Number of CPUs")
-	flags.SetAnnotation("cpus", "version", []string{"1.25"})
-	flags.Var(&copts.deviceReadBps, "device-read-bps", "Limit read rate (bytes per second) from a device")
-	flags.Var(&copts.deviceReadIOps, "device-read-iops", "Limit read rate (IO per second) from a device")
-	flags.Var(&copts.deviceWriteBps, "device-write-bps", "Limit write rate (bytes per second) to a device")
-	flags.Var(&copts.deviceWriteIOps, "device-write-iops", "Limit write rate (IO per second) to a device")
-	flags.Var(&copts.ioMaxBandwidth, "io-maxbandwidth", "Maximum IO bandwidth limit for the system drive (Windows only)")
-	flags.SetAnnotation("io-maxbandwidth", "ostype", []string{"windows"})
-	flags.Uint64Var(&copts.ioMaxIOps, "io-maxiops", 0, "Maximum IOps limit for the system drive (Windows only)")
-	flags.SetAnnotation("io-maxiops", "ostype", []string{"windows"})
-	flags.Var(&copts.kernelMemory, "kernel-memory", "Kernel memory limit")
-	flags.VarP(&copts.memory, "memory", "m", "Memory limit")
-	flags.Var(&copts.memoryReservation, "memory-reservation", "Memory soft limit")
-	flags.Var(&copts.memorySwap, "memory-swap", "Swap limit equal to memory plus swap: '-1' to enable unlimited swap")
-	flags.Int64Var(&copts.swappiness, "memory-swappiness", -1, "Tune container memory swappiness (0 to 100)")
-	flags.BoolVar(&copts.oomKillDisable, "oom-kill-disable", false, "Disable OOM Killer")
 	flags.IntVar(&copts.oomScoreAdj, "oom-score-adj", 0, "Tune host's OOM preferences (-1000 to 1000)")
-	flags.Int64Var(&copts.pidsLimit, "pids-limit", 0, "Tune container pids limit (set -1 for unlimited)")
 
 	// Low-level execution (cgroups, namespaces, ...)
-	flags.StringVar(&copts.cgroupParent, "cgroup-parent", "", "Optional parent cgroup for the container")
 	flags.StringVar(&copts.ipcMode, "ipc", "", "IPC namespace to use")
-	flags.StringVar(&copts.isolation, "isolation", "", "Container isolation technology")
 	flags.StringVar(&copts.pidMode, "pid", "", "PID namespace to use")
 	flags.Var(&copts.shmSize, "shm-size", "Size of /dev/shm")
 	flags.StringVar(&copts.utsMode, "uts", "", "UTS namespace to use")
-	flags.StringVar(&copts.runtime, "runtime", "", "Runtime to use for this container")
 
 	flags.BoolVar(&copts.init, "init", false, "Run an init inside the container that forwards signals and reaps processes")
 	flags.SetAnnotation("init", "version", []string{"1.25"})
@@ -319,11 +223,6 @@ func parse(flags *pflag.FlagSet, copts *containerOptions) (*containerConfig, err
 	}
 
 	var err error
-
-	swappiness := copts.swappiness
-	if swappiness != -1 && (swappiness < 0 || swappiness > 100) {
-		return nil, errors.Errorf("invalid value: %d. Valid memory swappiness range is 0-100", swappiness)
-	}
 
 	mounts := copts.mounts.Value()
 	if len(mounts) > 0 && copts.volumeDriver != "" {
@@ -456,82 +355,9 @@ func parse(flags *pflag.FlagSet, copts *containerOptions) (*containerConfig, err
 		return nil, err
 	}
 
-	storageOpts, err := parseStorageOpts(copts.storageOpt.GetAll())
-	if err != nil {
-		return nil, err
-	}
-
-	// Healthcheck
-	var healthConfig *container.HealthConfig
-	haveHealthSettings := copts.healthCmd != "" ||
-		copts.healthInterval != 0 ||
-		copts.healthTimeout != 0 ||
-		copts.healthStartPeriod != 0 ||
-		copts.healthRetries != 0
-	if copts.noHealthcheck {
-		if haveHealthSettings {
-			return nil, errors.Errorf("--no-healthcheck conflicts with --health-* options")
-		}
-		test := strslice.StrSlice{"NONE"}
-		healthConfig = &container.HealthConfig{Test: test}
-	} else if haveHealthSettings {
-		var probe strslice.StrSlice
-		if copts.healthCmd != "" {
-			args := []string{"CMD-SHELL", copts.healthCmd}
-			probe = strslice.StrSlice(args)
-		}
-		if copts.healthInterval < 0 {
-			return nil, errors.Errorf("--health-interval cannot be negative")
-		}
-		if copts.healthTimeout < 0 {
-			return nil, errors.Errorf("--health-timeout cannot be negative")
-		}
-		if copts.healthRetries < 0 {
-			return nil, errors.Errorf("--health-retries cannot be negative")
-		}
-		if copts.healthStartPeriod < 0 {
-			return nil, fmt.Errorf("--health-start-period cannot be negative")
-		}
-
-		healthConfig = &container.HealthConfig{
-			Test:        probe,
-			Interval:    copts.healthInterval,
-			Timeout:     copts.healthTimeout,
-			StartPeriod: copts.healthStartPeriod,
-			Retries:     copts.healthRetries,
-		}
-	}
-
 	resources := container.Resources{
-		CgroupParent:         copts.cgroupParent,
-		Memory:               copts.memory.Value(),
-		MemoryReservation:    copts.memoryReservation.Value(),
-		MemorySwap:           copts.memorySwap.Value(),
-		MemorySwappiness:     &copts.swappiness,
-		KernelMemory:         copts.kernelMemory.Value(),
-		OomKillDisable:       &copts.oomKillDisable,
-		NanoCPUs:             copts.cpus.Value(),
-		CPUCount:             copts.cpuCount,
-		CPUPercent:           copts.cpuPercent,
-		CPUShares:            copts.cpuShares,
-		CPUPeriod:            copts.cpuPeriod,
-		CpusetCpus:           copts.cpusetCpus,
-		CpusetMems:           copts.cpusetMems,
-		CPUQuota:             copts.cpuQuota,
-		CPURealtimePeriod:    copts.cpuRealtimePeriod,
-		CPURealtimeRuntime:   copts.cpuRealtimeRuntime,
-		PidsLimit:            copts.pidsLimit,
-		BlkioWeight:          copts.blkioWeight,
-		BlkioWeightDevice:    copts.blkioWeightDevice.GetList(),
-		BlkioDeviceReadBps:   copts.deviceReadBps.GetList(),
-		BlkioDeviceWriteBps:  copts.deviceWriteBps.GetList(),
-		BlkioDeviceReadIOps:  copts.deviceReadIOps.GetList(),
-		BlkioDeviceWriteIOps: copts.deviceWriteIOps.GetList(),
-		IOMaximumIOps:        copts.ioMaxIOps,
-		IOMaximumBandwidth:   uint64(copts.ioMaxBandwidth),
-		Ulimits:              copts.ulimits.GetList(),
-		DeviceCgroupRules:    copts.deviceCgroupRules.GetAll(),
-		Devices:              deviceMappings,
+		Ulimits: copts.ulimits.GetList(),
+		Devices: deviceMappings,
 	}
 
 	config := &container.Config{
@@ -555,7 +381,6 @@ func parse(flags *pflag.FlagSet, copts *containerOptions) (*containerConfig, err
 		Entrypoint:      entrypoint,
 		WorkingDir:      copts.workingDir,
 		Labels:          opts.ConvertKVStringsToMap(labels),
-		Healthcheck:     healthConfig,
 	}
 	if flags.Changed("stop-signal") {
 		config.StopSignal = copts.stopSignal
@@ -593,16 +418,13 @@ func parse(flags *pflag.FlagSet, copts *containerOptions) (*containerConfig, err
 		GroupAdd:       copts.groupAdd.GetAll(),
 		RestartPolicy:  restartPolicy,
 		SecurityOpt:    securityOpts,
-		StorageOpt:     storageOpts,
 		ReadonlyRootfs: copts.readonlyRootfs,
 		LogConfig:      container.LogConfig{Type: copts.loggingDriver, Config: loggingOpts},
 		VolumeDriver:   copts.volumeDriver,
-		Isolation:      container.Isolation(copts.isolation),
 		ShmSize:        copts.shmSize.Value(),
 		Resources:      resources,
 		Tmpfs:          tmpfs,
 		Sysctls:        copts.sysctls.GetAll(),
-		Runtime:        copts.runtime,
 		Mounts:         mounts,
 	}
 
@@ -674,9 +496,10 @@ func parseLoggingOpts(loggingDriver string, loggingOpts []string) (map[string]st
 	return loggingOptsMap, nil
 }
 
-// takes a local seccomp daemon, reads the file contents for sending to the daemon
+// parseSecurityOpts validates --security-opt values. The daemon only
+// understands no-new-privileges and seccomp=unconfined.
 func parseSecurityOpts(securityOpts []string) ([]string, error) {
-	for key, opt := range securityOpts {
+	for _, opt := range securityOpts {
 		con := strings.SplitN(opt, "=", 2)
 		if len(con) == 1 && con[0] != "no-new-privileges" {
 			if strings.Contains(opt, ":") {
@@ -685,50 +508,22 @@ func parseSecurityOpts(securityOpts []string) ([]string, error) {
 				return securityOpts, errors.Errorf("Invalid --security-opt: %q", opt)
 			}
 		}
-		if con[0] == "seccomp" && con[1] != "unconfined" {
-			f, err := ioutil.ReadFile(con[1])
-			if err != nil {
-				return securityOpts, errors.Errorf("opening seccomp profile (%s) failed: %v", con[1], err)
-			}
-			b := bytes.NewBuffer(nil)
-			if err := json.Compact(b, f); err != nil {
-				return securityOpts, errors.Errorf("compacting json for seccomp profile (%s) failed: %v", con[1], err)
-			}
-			securityOpts[key] = fmt.Sprintf("seccomp=%s", b.Bytes())
-		}
 	}
 
 	return securityOpts, nil
-}
-
-// parses storage options per container into a map
-func parseStorageOpts(storageOpts []string) (map[string]string, error) {
-	m := make(map[string]string)
-	for _, option := range storageOpts {
-		if strings.Contains(option, "=") {
-			opt := strings.SplitN(option, "=", 2)
-			m[opt[0]] = opt[1]
-		} else {
-			return nil, errors.Errorf("invalid storage option")
-		}
-	}
-	return m, nil
 }
 
 // parseDevice parses a device mapping string to a container.DeviceMapping struct
 func parseDevice(device string) (container.DeviceMapping, error) {
 	src := ""
 	dst := ""
-	permissions := "rwm"
 	arr := strings.Split(device, ":")
 	switch len(arr) {
 	case 3:
-		permissions = arr[2]
+		// cgroup permissions are accepted for compatibility and ignored
 		fallthrough
 	case 2:
-		if validDeviceMode(arr[1]) {
-			permissions = arr[1]
-		} else {
+		if !validDeviceMode(arr[1]) {
 			dst = arr[1]
 		}
 		fallthrough
@@ -743,22 +538,10 @@ func parseDevice(device string) (container.DeviceMapping, error) {
 	}
 
 	deviceMapping := container.DeviceMapping{
-		PathOnHost:        src,
-		PathInContainer:   dst,
-		CgroupPermissions: permissions,
+		PathOnHost:      src,
+		PathInContainer: dst,
 	}
 	return deviceMapping, nil
-}
-
-// validateDeviceCgroupRule validates a device cgroup rule string format
-// It will make sure 'val' is in the form:
-//    'type major:minor mode'
-func validateDeviceCgroupRule(val string) (string, error) {
-	if deviceCgroupRuleRegexp.MatchString(val) {
-		return val, nil
-	}
-
-	return val, errors.Errorf("invalid device cgroup format '%s'", val)
 }
 
 // validDeviceMode checks if the mode for device is valid or not.
@@ -783,7 +566,9 @@ func validDeviceMode(mode string) bool {
 
 // validateDevice validates a path for devices
 // It will make sure 'val' is in the form:
-//    [host-dir:]container-path[:mode]
+//
+//	[host-dir:]container-path[:mode]
+//
 // It also validates the device mode.
 func validateDevice(val string) (string, error) {
 	return validatePath(val, validDeviceMode)

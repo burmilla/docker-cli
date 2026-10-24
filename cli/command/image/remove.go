@@ -76,7 +76,7 @@ func runRemove(dockerCli command.Cli, opts removeOptions, images []string) error
 		if !opts.force {
 			return errors.New(msg)
 		}
-		fmt.Fprintf(dockerCli.Err(), msg)
+		fmt.Fprint(dockerCli.Err(), msg)
 	}
 	return nil
 }

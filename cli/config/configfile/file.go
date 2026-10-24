@@ -23,26 +23,18 @@ const (
 
 // ConfigFile ~/.docker/config.json file info
 type ConfigFile struct {
-	AuthConfigs          map[string]types.AuthConfig `json:"auths"`
-	HTTPHeaders          map[string]string           `json:"HttpHeaders,omitempty"`
-	PsFormat             string                      `json:"psFormat,omitempty"`
-	ImagesFormat         string                      `json:"imagesFormat,omitempty"`
-	NetworksFormat       string                      `json:"networksFormat,omitempty"`
-	PluginsFormat        string                      `json:"pluginsFormat,omitempty"`
-	VolumesFormat        string                      `json:"volumesFormat,omitempty"`
-	StatsFormat          string                      `json:"statsFormat,omitempty"`
-	DetachKeys           string                      `json:"detachKeys,omitempty"`
-	CredentialsStore     string                      `json:"credsStore,omitempty"`
-	CredentialHelpers    map[string]string           `json:"credHelpers,omitempty"`
-	Filename             string                      `json:"-"` // Note: for internal use only
-	ServiceInspectFormat string                      `json:"serviceInspectFormat,omitempty"`
-	ServicesFormat       string                      `json:"servicesFormat,omitempty"`
-	TasksFormat          string                      `json:"tasksFormat,omitempty"`
-	SecretFormat         string                      `json:"secretFormat,omitempty"`
-	ConfigFormat         string                      `json:"configFormat,omitempty"`
-	NodesFormat          string                      `json:"nodesFormat,omitempty"`
-	PruneFilters         []string                    `json:"pruneFilters,omitempty"`
-	Proxies              map[string]ProxyConfig      `json:"proxies,omitempty"`
+	AuthConfigs       map[string]types.AuthConfig `json:"auths"`
+	HTTPHeaders       map[string]string           `json:"HttpHeaders,omitempty"`
+	PsFormat          string                      `json:"psFormat,omitempty"`
+	ImagesFormat      string                      `json:"imagesFormat,omitempty"`
+	NetworksFormat    string                      `json:"networksFormat,omitempty"`
+	VolumesFormat     string                      `json:"volumesFormat,omitempty"`
+	DetachKeys        string                      `json:"detachKeys,omitempty"`
+	CredentialsStore  string                      `json:"credsStore,omitempty"`
+	CredentialHelpers map[string]string           `json:"credHelpers,omitempty"`
+	Filename          string                      `json:"-"` // Note: for internal use only
+	PruneFilters      []string                    `json:"pruneFilters,omitempty"`
+	Proxies           map[string]ProxyConfig      `json:"proxies,omitempty"`
 }
 
 // ProxyConfig contains proxy configuration settings

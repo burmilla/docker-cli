@@ -50,7 +50,6 @@ Docker containers report the following events:
 - `exec_detach`
 - `exec_start`
 - `export`
-- `health_status`
 - `kill`
 - `oom`
 - `pause`

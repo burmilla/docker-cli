@@ -11,7 +11,6 @@ import (
 	mounttypes "github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/pkg/idtools"
 	"github.com/docker/docker/pkg/stringid"
-	"github.com/opencontainers/selinux/go-selinux/label"
 	"github.com/pkg/errors"
 )
 
@@ -41,15 +40,6 @@ type Driver interface {
 	// Scope returns the scope of the driver (e.g. `global` or `local`).
 	// Scope determines how the driver is handled at a cluster level
 	Scope() string
-}
-
-// Capability defines a set of capabilities that a driver is able to handle.
-type Capability struct {
-	// Scope is the scope of the driver, `global` or `local`
-	// A `global` scope indicates that the driver manages volumes across the cluster
-	// A `local` scope indicates that the driver only manages volumes resources local to the host
-	// Scope is declared by the driver
-	Scope string
 }
 
 // Volume is a place to store data. It is backed by a specific driver, and can be mounted.
@@ -151,20 +141,7 @@ func (m *MountPoint) Cleanup() error {
 // configured, or creating the source directory if supplied.
 // The, optional, checkFun parameter allows doing additional checking
 // before creating the source directory on the host.
-func (m *MountPoint) Setup(mountLabel string, rootIDs idtools.IDPair, checkFun func(m *MountPoint) error) (path string, err error) {
-	defer func() {
-		if err == nil {
-			if label.RelabelNeeded(m.Mode) {
-				if err = label.Relabel(m.Source, mountLabel, label.IsShared(m.Mode)); err != nil {
-					path = ""
-					err = errors.Wrapf(err, "error setting label on mount source '%s'", m.Source)
-					return
-				}
-			}
-		}
-		return
-	}()
-
+func (m *MountPoint) Setup(rootIDs idtools.IDPair, checkFun func(m *MountPoint) error) (path string, err error) {
 	if m.Volume != nil {
 		id := m.ID
 		if id == "" {

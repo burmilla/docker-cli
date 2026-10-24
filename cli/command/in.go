@@ -4,7 +4,6 @@ import (
 	"errors"
 	"io"
 	"os"
-	"runtime"
 
 	"github.com/docker/docker/pkg/term"
 )
@@ -40,11 +39,7 @@ func (i *InStream) CheckTty(attachStdin, ttyMode bool) error {
 	// be a tty itself: redirecting or piping the client standard input is
 	// incompatible with `docker run -t`, `docker exec -t` or `docker attach`.
 	if ttyMode && attachStdin && !i.isTerminal {
-		eText := "the input device is not a TTY"
-		if runtime.GOOS == "windows" {
-			return errors.New(eText + ".  If you are using mintty, try prefixing the command with 'winpty'")
-		}
-		return errors.New(eText)
+		return errors.New("the input device is not a TTY")
 	}
 	return nil
 }

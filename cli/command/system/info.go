@@ -77,25 +77,13 @@ func prettyPrintInfo(dockerCli *command.DockerCli, info types.Info) error {
 	fmt.Fprintf(dockerCli.Out(), " %s", strings.Join(info.Plugins.Log, " "))
 	fmt.Fprintf(dockerCli.Out(), "\n")
 
-	if len(info.Runtimes) > 0 {
-		fmt.Fprintf(dockerCli.Out(), "Runtimes:")
-		for name := range info.Runtimes {
-			fmt.Fprintf(dockerCli.Out(), " %s", name)
-		}
-		fmt.Fprint(dockerCli.Out(), "\n")
-		fmt.Fprintf(dockerCli.Out(), "Default Runtime: %s\n", info.DefaultRuntime)
-	}
-
 	if info.OSType == "linux" {
-		fmt.Fprintf(dockerCli.Out(), "Init Binary: %v\n", info.InitBinary)
-
 		for _, ci := range []struct {
 			Name   string
 			Commit types.Commit
 		}{
 			{"containerd", info.ContainerdCommit},
 			{"runc", info.RuncCommit},
-			{"init", info.InitCommit},
 		} {
 			fmt.Fprintf(dockerCli.Out(), "%s version: %s", ci.Name, ci.Commit.ID)
 			if ci.Commit.ID != ci.Commit.Expected {
@@ -111,22 +99,8 @@ func prettyPrintInfo(dockerCli *command.DockerCli, info types.Info) error {
 			fmt.Fprintf(dockerCli.Out(), "Security Options:\n")
 			for _, so := range kvs {
 				fmt.Fprintf(dockerCli.Out(), " %s\n", so.Name)
-				for _, o := range so.Options {
-					switch o.Key {
-					case "profile":
-						if o.Value != "default" {
-							fmt.Fprintf(dockerCli.Err(), "  WARNING: You're not using the default seccomp profile\n")
-						}
-						fmt.Fprintf(dockerCli.Out(), "  Profile: %s\n", o.Value)
-					}
-				}
 			}
 		}
-	}
-
-	// Isolation only has meaning on a Windows daemon.
-	if info.OSType == "windows" {
-		fmt.Fprintf(dockerCli.Out(), "Default Isolation: %v\n", info.Isolation)
 	}
 
 	fprintfIfNotEmpty(dockerCli.Out(), "Kernel Version: %s\n", info.KernelVersion)
@@ -212,10 +186,7 @@ func prettyPrintInfo(dockerCli *command.DockerCli, info types.Info) error {
 		}
 	}
 
-	// Only output these warnings if the server does not support these features
-	if info.OSType != "windows" {
-		printStorageDriverWarnings(dockerCli, info)
-	}
+	printStorageDriverWarnings(dockerCli, info)
 
 	return nil
 }

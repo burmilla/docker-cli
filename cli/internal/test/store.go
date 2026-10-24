@@ -19,26 +19,6 @@ func NewFakeStore() credentials.Store {
 	return &fakeStore{store: map[string]types.AuthConfig{}}
 }
 
-func (c *fakeStore) SetStore(store map[string]types.AuthConfig) {
-	c.store = store
-}
-
-func (c *fakeStore) SetEraseFunc(eraseFunc func(string) error) {
-	c.eraseFunc = eraseFunc
-}
-
-func (c *fakeStore) SetGetFunc(getFunc func(string) (types.AuthConfig, error)) {
-	c.getFunc = getFunc
-}
-
-func (c *fakeStore) SetGetAllFunc(getAllFunc func() (map[string]types.AuthConfig, error)) {
-	c.getAllFunc = getAllFunc
-}
-
-func (c *fakeStore) SetStoreFunc(storeFunc func(types.AuthConfig) error) {
-	c.storeFunc = storeFunc
-}
-
 // Erase removes the given credentials from the map store
 func (c *fakeStore) Erase(serverAddress string) error {
 	if c.eraseFunc != nil {

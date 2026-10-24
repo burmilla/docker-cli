@@ -21,8 +21,6 @@ Usage:	docker network create [OPTIONS] NETWORK
 Create a network
 
 Options:
-      --attachable           Enable manual container attachment
-      --ingress              Specify the network provides the routing-mesh
       --aux-address value    Auxiliary IPv4 or IPv6 addresses used by Network
                              driver (default map[])
   -d, --driver string        Driver to manage the Network (default "bridge")
@@ -37,9 +35,6 @@ Options:
   -o, --opt value            Set driver specific options (default map[])
       --subnet value         Subnet in CIDR format that represents a
                              network segment (default [])
-      --scope value          Promote a network to swarm scope (value = [ local | swarm ])
-      --config-only          Creates a configuration only network
-      --config-from          The name of the network from which copying the configuration
 ```
 
 ## Description
@@ -198,23 +193,6 @@ By default, when you connect a container to an `overlay` network, Docker also
 connects a bridge network to it to provide external connectivity. If you want
 to create an externally isolated `overlay` network, you can specify the
 `--internal` option.
-
-### Network ingress mode
-
-You can create the network which will be used to provide the routing-mesh in the
-swarm cluster. You do so by specifying `--ingress` when creating the network. Only
-one ingress network can be created at the time. The network can be removed only
-if no services depend on it. Any option available when creating a overlay network
-is also available when creating the ingress network, besides the `--attachable` option.
-
-```bash
-$ docker network create -d overlay \
-  --subnet=10.11.0.0/16 \
-  --ingress \
-  --opt com.docker.network.mtu=9216 \
-  --opt encrypted=true \
-  my-ingress-network
-```
 
 ## Related commands
 

@@ -46,7 +46,7 @@ func NewInspectCommand(dockerCli *command.DockerCli) *cobra.Command {
 func runInspect(dockerCli *command.DockerCli, opts inspectOptions) error {
 	var elementSearcher inspect.GetRefFunc
 	switch opts.inspectType {
-	case "", "container", "image", "node", "network", "service", "volume", "task", "plugin", "secret":
+	case "", "container", "image", "network", "volume":
 		elementSearcher = inspectAll(context.Background(), dockerCli, opts.size, opts.inspectType)
 	default:
 		return errors.Errorf("%q is not a valid value for --type", opts.inspectType)
@@ -72,40 +72,9 @@ func inspectNetwork(ctx context.Context, dockerCli *command.DockerCli) inspect.G
 	}
 }
 
-func inspectNode(ctx context.Context, dockerCli *command.DockerCli) inspect.GetRefFunc {
-	return func(ref string) (interface{}, []byte, error) {
-		return dockerCli.Client().NodeInspectWithRaw(ctx, ref)
-	}
-}
-
-func inspectService(ctx context.Context, dockerCli *command.DockerCli) inspect.GetRefFunc {
-	return func(ref string) (interface{}, []byte, error) {
-		// Service inspect shows defaults values in empty fields.
-		return dockerCli.Client().ServiceInspectWithRaw(ctx, ref, types.ServiceInspectOptions{InsertDefaults: true})
-	}
-}
-
-func inspectTasks(ctx context.Context, dockerCli *command.DockerCli) inspect.GetRefFunc {
-	return func(ref string) (interface{}, []byte, error) {
-		return dockerCli.Client().TaskInspectWithRaw(ctx, ref)
-	}
-}
-
 func inspectVolume(ctx context.Context, dockerCli *command.DockerCli) inspect.GetRefFunc {
 	return func(ref string) (interface{}, []byte, error) {
 		return dockerCli.Client().VolumeInspectWithRaw(ctx, ref)
-	}
-}
-
-func inspectPlugin(ctx context.Context, dockerCli *command.DockerCli) inspect.GetRefFunc {
-	return func(ref string) (interface{}, []byte, error) {
-		return dockerCli.Client().PluginInspectWithRaw(ctx, ref)
-	}
-}
-
-func inspectSecret(ctx context.Context, dockerCli *command.DockerCli) inspect.GetRefFunc {
-	return func(ref string) (interface{}, []byte, error) {
-		return dockerCli.Client().SecretInspectWithRaw(ctx, ref)
 	}
 }
 
@@ -113,7 +82,6 @@ func inspectAll(ctx context.Context, dockerCli *command.DockerCli, getSize bool,
 	var inspectAutodetect = []struct {
 		objectType      string
 		isSizeSupported bool
-		isSwarmObject   bool
 		objectInspector func(string) (interface{}, []byte, error)
 	}{
 		{
@@ -133,41 +101,6 @@ func inspectAll(ctx context.Context, dockerCli *command.DockerCli, getSize bool,
 			objectType:      "volume",
 			objectInspector: inspectVolume(ctx, dockerCli),
 		},
-		{
-			objectType:      "service",
-			isSwarmObject:   true,
-			objectInspector: inspectService(ctx, dockerCli),
-		},
-		{
-			objectType:      "task",
-			isSwarmObject:   true,
-			objectInspector: inspectTasks(ctx, dockerCli),
-		},
-		{
-			objectType:      "node",
-			isSwarmObject:   true,
-			objectInspector: inspectNode(ctx, dockerCli),
-		},
-		{
-			objectType:      "plugin",
-			objectInspector: inspectPlugin(ctx, dockerCli),
-		},
-		{
-			objectType:      "secret",
-			isSwarmObject:   true,
-			objectInspector: inspectSecret(ctx, dockerCli),
-		},
-	}
-
-	// isSwarmManager does an Info API call to verify that the daemon is
-	// a swarm manager.
-	isSwarmManager := func() bool {
-		info, err := dockerCli.Client().Info(ctx)
-		if err != nil {
-			fmt.Fprintln(dockerCli.Err(), err)
-			return false
-		}
-		return info.Swarm.ControlAvailable
 	}
 
 	isErrNotSupported := func(err error) bool {
@@ -175,29 +108,9 @@ func inspectAll(ctx context.Context, dockerCli *command.DockerCli, getSize bool,
 	}
 
 	return func(ref string) (interface{}, []byte, error) {
-		const (
-			swarmSupportUnknown = iota
-			swarmSupported
-			swarmUnsupported
-		)
-
-		isSwarmSupported := swarmSupportUnknown
-
 		for _, inspectData := range inspectAutodetect {
 			if typeConstraint != "" && inspectData.objectType != typeConstraint {
 				continue
-			}
-			if typeConstraint == "" && inspectData.isSwarmObject {
-				if isSwarmSupported == swarmSupportUnknown {
-					if isSwarmManager() {
-						isSwarmSupported = swarmSupported
-					} else {
-						isSwarmSupported = swarmUnsupported
-					}
-				}
-				if isSwarmSupported == swarmUnsupported {
-					continue
-				}
 			}
 			v, raw, err := inspectData.objectInspector(ref)
 			if err != nil {

@@ -2,13 +2,9 @@
 
 package registry
 
-import (
-	"github.com/spf13/pflag"
-)
-
 var (
 	// CertsDir is the directory where certificates are stored
-	CertsDir = "/etc/docker/certs.d"
+	CertsDir = "/etc/docker/system-certs.d"
 )
 
 // cleanPath is used to ensure that a directory name is valid on the target
@@ -17,9 +13,4 @@ var (
 // which contain those characters (such as : on Windows)
 func cleanPath(s string) string {
 	return s
-}
-
-// installCliPlatformFlags handles any platform specific flags for the service.
-func (options *ServiceOptions) installCliPlatformFlags(flags *pflag.FlagSet) {
-	flags.BoolVar(&options.V2Only, "disable-legacy-registry", true, "Disable contacting legacy registries")
 }

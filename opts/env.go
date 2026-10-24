@@ -3,7 +3,6 @@ package opts
 import (
 	"fmt"
 	"os"
-	"runtime"
 	"strings"
 )
 
@@ -32,12 +31,6 @@ func ValidateEnv(val string) (string, error) {
 func doesEnvExist(name string) bool {
 	for _, entry := range os.Environ() {
 		parts := strings.SplitN(entry, "=", 2)
-		if runtime.GOOS == "windows" {
-			// Environment variable are case-insensitive on Windows. PaTh, path and PATH are equivalent.
-			if strings.EqualFold(parts[0], name) {
-				return true
-			}
-		}
 		if parts[0] == name {
 			return true
 		}

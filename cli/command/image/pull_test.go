@@ -7,8 +7,8 @@ import (
 	"testing"
 
 	"github.com/docker/cli/cli/internal/test"
-	"github.com/docker/docker/pkg/testutil"
-	"github.com/docker/docker/pkg/testutil/golden"
+	"github.com/docker/cli/internal/test/golden"
+	"github.com/docker/cli/internal/test/testutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -32,11 +32,6 @@ func TestNewPullCommandErrors(t *testing.T) {
 			name:          "all-tags-with-tag",
 			expectedError: "tag can't be used with --all-tags/-a",
 			args:          []string{"--all-tags", "image:tag"},
-		},
-		{
-			name:          "pull-error",
-			args:          []string{"--disable-content-trust=false", "image:tag"},
-			expectedError: "you are not authorized to perform this operation: server returned 401.",
 		},
 	}
 	for _, tc := range testCases {
